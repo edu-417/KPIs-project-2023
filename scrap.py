@@ -18,9 +18,11 @@ def get_electricity(start, end):
     response = requests.get(f"{URL_BASE_ELECTRICITY}/{start}/{end}")
     soup = BeautifulSoup(response.text, 'html.parser')
     # print(soup)
-    date_str = soup.find("td", class_="periodo") 
-    value = soup.find("td", class_="dato")
-    print(f"{date_str.getText().strip()}: {value.getText().strip()}")
+    dates_str = soup.find_all("td", class_="periodo")
+    values = soup.find_all("td", class_="dato")
+    for date_str, value in zip(dates_str, values):
+        print(f"{date_str.getText().strip()} : {value.getText().strip()}")
+    #print(f"{date_str.getText().strip()}: {value.getText().strip()}")
 
 def get_pbi(date_str):
     # TODO
@@ -57,7 +59,7 @@ def get_price_index(month, year):
     print(df[(df["Año"] == year) & (df["Mes"] == month)])
 
 def main():
-    get_electricity("2023-6", "2023-6")
+    get_electricity("2023-4", "2023-6")
     get_pbi("202304")
     get_intern_demand("2023-1", "2023-4")
     get_price_index("Abril", 2023)
