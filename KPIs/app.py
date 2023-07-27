@@ -2,6 +2,9 @@ from bs4 import BeautifulSoup
 import requests
 import pandas as pd
 import io
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 
 URL_BASE_BCRP = "https://estadisticas.bcrp.gob.pe/estadisticas/series/"
@@ -16,15 +19,19 @@ URL_EURO_EXCHANGE_RATE = f"{URL_BASE_BCRP}/diarias/resultados/PD04648PD/html"
 
 
 def get_electricity(start_date: str, end_date: str):
+    logging.info("Getting Electricity(GWH)")
+    logging.info("========================")
     electricity_df = get_bcrp_data(start_date, end_date, URL_BASE_ELECTRICITY)
-    print(electricity_df)
+    logging.debug(electricity_df)
+    logging.info("Got Electricity")
 
 def get_pbi(date: str):
+    logging.info("Getting PBI")
+    logging.info("========================")
     # TODO
     # 1. Download File (url)
     # 2. Descomprimir archivo descargado
     # 3. Buscar archivo que comienza con ("VBA-PBI")
-
     pd.set_option('display.max_colwidth', None)
     df = pd.read_excel("CalculoPBI_120/VA-PBI 05 2023 B 2007 r.xlsx", usecols="A:B", skiprows=3)
     # print(df.columns)
@@ -33,20 +40,27 @@ def get_pbi(date: str):
     # print(df.tail(20))
     df["Año y Mes"] = df["Año y Mes"].astype("str")
     # print(df["Año y Mes"])
-    print(df[df["Año y Mes"] == date])
+    logging.debug(df[df["Año y Mes"] == date])
+    logging.info("Got PBI")
 
 
 def get_intern_demand(start_date: str, end_date: str):
+    logging.info("Getting Intern Demand")
+    logging.info("========================")
     intern_demand_df = get_bcrp_data(start_date, end_date, URL_BASE_INTERN_DEMAND)
-    print(intern_demand_df)
+    logging.debug(intern_demand_df)
+    logging.info("Got intern demand")
 
 
 def get_price_index(month: str, year: int):
+    logging.info("Getting Price Index")
+    logging.info("========================")
     file_content = requests.get(URL_INDEX_PRICE, verify=False).content
     df = pd.read_excel(io.BytesIO(file_content), skiprows=3)
     df = df.fillna(method="ffill")
     # print(df.tail(20))
-    print(df[(df["Año"] == year) & (df["Mes"] == month)])
+    logging.debug(df[(df["Año"] == year) & (df["Mes"] == month)])
+    logging.info("Got PBI")
 
 
 def get_bcrp_data(start_date: str, end_date: str, url: str):
@@ -65,8 +79,11 @@ def get_bcrp_data(start_date: str, end_date: str, url: str):
 
 
 def get_unemployment_rate(start_date: str, end_date: str):
+    logging.info("Getting Unemployment Rate")
+    logging.info("========================")
     unemployment_rate_df = get_bcrp_data(start_date, end_date, URL_BASE_UNEMPLOYEMENT_RATE)
-    print(unemployment_rate_df)
+    logging.debug(unemployment_rate_df)
+    logging.info("Got Unemployment Rate")
 
 
 def get_raw_material_price(start_year: int, end_year: int, row_index: int, frequency: str="MONTHLY"):
@@ -90,30 +107,42 @@ def get_raw_material_price(start_year: int, end_year: int, row_index: int, frequ
     return pd.DataFrame(data)
 
 def get_copper_price(start_year: int, end_year: int, frequency: str="MONTHLY"):
+    logging.info("Getting Copper Price")
+    logging.info("========================")
     COOPER_ROW_INDEX = 4
 
     copper_price_df = get_raw_material_price(start_year, end_year, COOPER_ROW_INDEX, frequency)
     copper_price_df["Price"] /= 10
 
-    print(copper_price_df)
+    logging.debug(copper_price_df)
+    logging.info("Got Copper Price")
 
 
 def get_petroleum_wti_price(start_year: int, end_year: int, frequency: str="MONTHLY"):
+    logging.info("Getting Petroleum WTI Price")
+    logging.info("========================")
     PETROLEUM_WTI_INDEX = 9
 
     petroleum_wti_df = get_raw_material_price(start_year, end_year, PETROLEUM_WTI_INDEX, frequency)
     
-    print(petroleum_wti_df)
+    logging.debug(petroleum_wti_df)
+    logging.info("Got Petroleum WTI Price")
 
 
 def get_dolar_exchange_rate(start_date: str, end_date: str):
+    logging.info("Getting Dolar Exchange")
+    logging.info("========================")
     dolar_exchange_rate_df = get_bcrp_data(start_date, end_date, URL_DOLAR_EXCHANGE_RATE)
-    print(dolar_exchange_rate_df)
+    logging.debug(dolar_exchange_rate_df)
+    logging.info("Got Dolar Exchange")
 
 
 def get_euro_exchange_rate(start_date: str, end_date: str):
+    logging.info("Getting Euro Exchange")
+    logging.info("========================")
     euro_exchange_rate_df = get_bcrp_data(start_date, end_date, URL_EURO_EXCHANGE_RATE)
-    print(euro_exchange_rate_df)
+    logging.debug(euro_exchange_rate_df)
+    logging.info("Got Euro Exchange")
 
 
 def main():
