@@ -12,6 +12,8 @@ URL_BASE_INTERN_DEMAND = f"{URL_BASE_BCRP}/trimestrales/resultados/PN02529AQ/htm
 URL_BASE_UNEMPLOYEMENT_RATE = f"{URL_BASE_BCRP}/mensuales/resultados/PN38063GM/html"
 URL_INDEX_PRICE = "https://www.inei.gob.pe/media/MenuRecursivo/indices_tematicos/02_indice-precios_al_consumidor-nivel_nacional_2b_16.xlsx"
 URL_RAW_MATERIAL_PRICE = f"{URL_BASE_BCENTRAL_CHILE}/Siete/ES/Siete/Cuadro/CAP_EI/MN_EI11/EI_PROD_BAS/637185066927145616"
+URL_DOLAR_EXCHANGE_RATE = f"{URL_BASE_BCRP}/diarias/resultados/PD04638PD/html"
+URL_EURO_EXCHANGE_RATE = f"{URL_BASE_BCRP}/diarias/resultados/PD04648PD/html"
 
 
 def get_electricity(start_date: str, end_date: str):
@@ -99,9 +101,21 @@ def get_petroleum_wti_price(start_year: int, end_year: int, frequency: str="MONT
     print(petroleum_wti_df)
 
 
+def get_dolar_exchange_rate(start_date: str, end_date: str):
+    get_bcrp_data(start_date, end_date, URL_DOLAR_EXCHANGE_RATE)
+
+
+def get_euro_exchange_rate(start_date: str, end_date: str):
+    get_bcrp_data(start_date, end_date, URL_EURO_EXCHANGE_RATE)
+
+
 def main():
     #KPI 1
     get_electricity("2023-4", "2023-6")
+    #KPI 3
+    get_dolar_exchange_rate("2023-06-20", "2023-06-30")
+    #KPI 4
+    get_euro_exchange_rate("2023-06-20", "2023-06-30")
     #KPI 9
     get_pbi("202304")
     #KPI 12
