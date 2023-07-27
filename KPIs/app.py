@@ -34,12 +34,9 @@ def get_pbi(date: str):
     # 3. Buscar archivo que comienza con ("VBA-PBI")
     pd.set_option('display.max_colwidth', None)
     df = pd.read_excel("CalculoPBI_120/VA-PBI 05 2023 B 2007 r.xlsx", usecols="A:B", skiprows=3)
-    # print(df.columns)
     df = df.dropna()
-    # print(df.head(20))
-    # print(df.tail(20))
     df["Año y Mes"] = df["Año y Mes"].astype("str")
-    # print(df["Año y Mes"])
+
     logging.debug(df[df["Año y Mes"] == date])
     logging.info("Got PBI")
 
