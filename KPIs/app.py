@@ -90,6 +90,15 @@ def get_copper_price(start_year: int, end_year: int, frequency: str="MONTHLY"):
 
     print(copper_price_df)
 
+
+def get_petroleum_wti_price(start_year: int, end_year: int, frequency: str="MONTHLY"):
+    PETROLEUM_WTI_INDEX = 9
+
+    petroleum_wti_df = get_raw_material_price(start_year, end_year, PETROLEUM_WTI_INDEX, frequency)
+    
+    print(petroleum_wti_df)
+
+
 def main():
     #KPI 1
     get_electricity("2023-4", "2023-6")
@@ -103,6 +112,8 @@ def main():
     get_price_index("Abril", 2023)
     #KPI 20
     get_copper_price(2023, 2023)
+    #KPI 20
+    get_petroleum_wti_price(2023, 2023)
 
 if __name__ == "__main__":
     main()
