@@ -16,6 +16,7 @@ URL_INDEX_PRICE = "https://www.inei.gob.pe/media/MenuRecursivo/indices_tematicos
 URL_RAW_MATERIAL_PRICE = f"{URL_BASE_BCENTRAL_CHILE}/Siete/ES/Siete/Cuadro/CAP_EI/MN_EI11/EI_PROD_BAS/637185066927145616"
 URL_DOLAR_EXCHANGE_RATE = f"{URL_BASE_BCRP}/diarias/resultados/PD04638PD/html"
 URL_EURO_EXCHANGE_RATE = f"{URL_BASE_BCRP}/diarias/resultados/PD04648PD/html"
+URL_DOLAR_EXCHANGE = f"{URL_BASE_BCENTRAL_CHILE}/Indicadoressiete/secure/Serie.aspx"
 
 
 def get_electricity(start_date: str, end_date: str):
@@ -142,6 +143,33 @@ def get_euro_exchange_rate(start_date: str, end_date: str):
     logging.info("Got Euro Exchange")
 
 
+def get_dolar_exchange(year: int, currency_code: str, param: str):
+    params = {
+        "gcode": f"PAR_{currency_code}",
+        "param": param
+    }
+
+    data = {
+        "DrDwnFechas": year,
+        "hdnFrecuencia": "DAILY"
+    }
+
+    response = requests.post(URL_DOLAR_EXCHANGE, params=params, data=data)
+    logging.debug(response.text)
+
+
+def get_yen_dolar_exchange(year: int):
+    logging.info("Getting YEN/DOLAR Exchange")
+    logging.info("========================")
+    get_dolar_exchange(year, "JPY", "cgBnAE8AOQBlAGcAIwBiAFUALQBsAEcAYgBOAEkASQBCAEcAegBFAFkAeABkADgASAA2AG8AdgB2AFMAUgBYADIAQwBzAEEARQBMAG8AawBzACMATABOAHMARgB1ADIAeQBBAFAAZwBhADIAbABWAHcAXwBXAGgATAAkAFIAVAB1AEIAbAB3AFoAdQBRAFgAZwA5AHgAdgAwACQATwBZADcAMwAuAGIARwBFAFIASwAuAHQA")
+
+
+def get_brazilian_real_dolar_exchange(year: int):
+    logging.info("Getting REAL/DOLAR Exchange")
+    logging.info("========================")
+    get_dolar_exchange(year, "BRL", "dQBoAHMAOABpAGgAMQB2AC4ALQBDAF8AdgBkAFIAUgBWAF8AbQB6AFgAOQBOAGIATgBwAEoAMQBNAE0ARAAuAGQAaQBmADMAUgBtAEsAMQBIAE0AcwBLADYAMwBDAHkAaQBQAFIARQBBAHMAaQBrAE8AZQBUAHoASQBLAEIALgB3AHkAYQBrAGUAWAB5AFcAZABBADcAVgBNADgAQgA0ADkAYwBsAFkAWgBIAG0ALgB1AFkAUQA")
+
+
 def main():
     #KPI 1
     get_electricity("2023-4", "2023-6")
@@ -149,6 +177,10 @@ def main():
     get_dolar_exchange_rate("2023-06-20", "2023-06-30")
     #KPI 4
     get_euro_exchange_rate("2023-06-20", "2023-06-30")
+    #KPI 5
+    get_yen_dolar_exchange(2023)
+    #KPI 6
+    get_brazilian_real_dolar_exchange(2023)
     #KPI 9
     get_pbi("202304")
     #KPI 12
