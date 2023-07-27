@@ -62,15 +62,24 @@ def get_unemployment_rate(start_date: str, end_date: str):
 
 
 def get_copper_price(start_year: int, end_year: int, frecuency: str="MONTHLY"):
-    url = f"{URL_COPPER_PRICE}?cbFechaInicio={start_year}&cbFechaTermino={end_year}&cbFrecuencia={frecuency}&cbCalculo=NONE&cbFechaBase="
-    response = requests.get(url)
+    COOPER_ROW_INDEX = 4
+    params = {
+        "cbFechaInicio": start_year,
+        "cbFechaTermino": end_year,
+        "cbFrecuencia": frecuency,
+        "cbCalculo": "NONE",
+        "cbFechaBase": ""
+    }
+    response = requests.get(URL_COPPER_PRICE, params=params)
     soup = BeautifulSoup(response.text, 'html.parser')
-    cupper_row = soup.css.select('#tbodyGrid > tr:nth-of-type(4) > .ar')
+    header = soup.css.select("thead > tr > .thData")
+    columns = [column.getText() for column in header]
+    rows = soup.css.select("#tbodyGrid > tr > td > .sname")
+    copper_values = soup.css.select(f"#tbodyGrid > tr:nth-of-type({COOPER_ROW_INDEX}) > .ar")
+    values = [float( raw_value.getText().strip().replace(',', '') ) / 10 for raw_value in copper_values]
 
-    for i, column in enumerate(cupper_row):
-        month = datetime.datetime(start_year, i + 1, 1).strftime('%B')
-        value = float( column.getText().strip().replace(',', '') ) / 10
-        print(f"{month}: {value}")
+    for period, value in zip(columns[2:], values):
+        print(f"{period}: {value}")
 
 def main():
     #KPI 1
