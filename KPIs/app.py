@@ -6,11 +6,12 @@ import io
 
 
 URL_BASE_BCRP = "https://estadisticas.bcrp.gob.pe/estadisticas/series/"
+URL_BASE_BCENTRAL_CHILE = "https://si3.bcentral.cl"
 URL_BASE_ELECTRICITY = f"{URL_BASE_BCRP}/mensuales/resultados/PD37966AM/html"
 URL_BASE_INTERN_DEMAND = f"{URL_BASE_BCRP}/trimestrales/resultados/PN02529AQ/html"
 URL_BASE_UNEMPLOYEMENT_RATE = f"{URL_BASE_BCRP}/mensuales/resultados/PN38063GM/html"
 URL_INDEX_PRICE = "https://www.inei.gob.pe/media/MenuRecursivo/indices_tematicos/02_indice-precios_al_consumidor-nivel_nacional_2b_16.xlsx"
-URL_COPPER_PRICE = "https://si3.bcentral.cl/Siete/ES/Siete/Cuadro/CAP_EI/MN_EI11/EI_PROD_BAS/637185066927145616"
+URL_RAW_MATERIAL_PRICE = f"{URL_BASE_BCENTRAL_CHILE}/Siete/ES/Siete/Cuadro/CAP_EI/MN_EI11/EI_PROD_BAS/637185066927145616"
 
 
 def get_electricity(start_date: str, end_date: str):
@@ -61,25 +62,33 @@ def get_unemployment_rate(start_date: str, end_date: str):
     get_bcrp_data(start_date, end_date, URL_BASE_UNEMPLOYEMENT_RATE)
 
 
-def get_copper_price(start_year: int, end_year: int, frecuency: str="MONTHLY"):
-    COOPER_ROW_INDEX = 4
+def get_raw_material_price(start_year: int, end_year: int, row_index: int, frequency: str="MONTHLY"):
     params = {
         "cbFechaInicio": start_year,
         "cbFechaTermino": end_year,
-        "cbFrecuencia": frecuency,
+        "cbFrecuencia": frequency,
         "cbCalculo": "NONE",
         "cbFechaBase": ""
     }
-    response = requests.get(URL_COPPER_PRICE, params=params)
+    response = requests.get(URL_RAW_MATERIAL_PRICE, params=params)
     soup = BeautifulSoup(response.text, 'html.parser')
     header = soup.css.select("thead > tr > .thData")
     columns = [column.getText() for column in header]
     rows = soup.css.select("#tbodyGrid > tr > td > .sname")
-    copper_values = soup.css.select(f"#tbodyGrid > tr:nth-of-type({COOPER_ROW_INDEX}) > .ar")
-    values = [float( raw_value.getText().strip().replace(',', '') ) / 10 for raw_value in copper_values]
 
-    for period, value in zip(columns[2:], values):
-        print(f"{period}: {value}")
+    raw_material_values = soup.css.select(f"#tbodyGrid > tr:nth-of-type({row_index}) > .ar")
+    material_values = [float( raw_value.getText().strip().replace(',', '') ) for raw_value in raw_material_values]
+
+    data = {"Period": columns[2:], "Price": material_values}
+    return pd.DataFrame(data)
+
+def get_copper_price(start_year: int, end_year: int, frequency: str="MONTHLY"):
+    COOPER_ROW_INDEX = 4
+
+    copper_price_df = get_raw_material_price(start_year, end_year, COOPER_ROW_INDEX, frequency)
+    copper_price_df["Price"] /= 10
+
+    print(copper_price_df)
 
 def main():
     #KPI 1
