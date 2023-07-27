@@ -11,13 +11,12 @@ URL_BASE_INTERN_DEMAND = f"{URL_BASE_BCRP}/trimestrales/resultados/PN02529AQ/htm
 URL_BASE_UNEMPLOYEMENT_RATE = f"{URL_BASE_BCRP}/mensuales/resultados/PN38063GM/html"
 URL_INDEX_PRICE = "https://www.inei.gob.pe/media/MenuRecursivo/indices_tematicos/02_indice-precios_al_consumidor-nivel_nacional_2b_16.xlsx"
 URL_COPPER_PRICE = "https://si3.bcentral.cl/Siete/ES/Siete/Cuadro/CAP_EI/MN_EI11/EI_PROD_BAS/637185066927145616"
-#?cbFechaInicio=2023&cbFechaTermino=2023&cbFrecuencia=MONTHLY&cbCalculo=NONE&cbFechaBase="
 
 
-def get_electricity(start, end):
-    get_bcrp_data(start, end, URL_BASE_ELECTRICITY)
+def get_electricity(start_date: str, end_date: str):
+    get_bcrp_data(start_date, end_date, URL_BASE_ELECTRICITY)
 
-def get_pbi(date_str):
+def get_pbi(date: str):
     # TODO
     # 1. Download File (url)
     # 2. Descomprimir archivo descargado
@@ -31,14 +30,14 @@ def get_pbi(date_str):
     # print(df.tail(20))
     df["Año y Mes"] = df["Año y Mes"].astype("str")
     # print(df["Año y Mes"])
-    print(df[df["Año y Mes"] == date_str])
+    print(df[df["Año y Mes"] == date])
 
 
-def get_intern_demand(start, end):
-    get_bcrp_data(start, end, URL_BASE_INTERN_DEMAND)
+def get_intern_demand(start_date: str, end_date: str):
+    get_bcrp_data(start_date, end_date, URL_BASE_INTERN_DEMAND)
 
 
-def get_price_index(month, year):
+def get_price_index(month: str, year: int):
     file_content = requests.get(URL_INDEX_PRICE, verify=False).content
     df = pd.read_excel(io.BytesIO(file_content), skiprows=3)
     df = df.fillna(method="ffill")
@@ -46,21 +45,23 @@ def get_price_index(month, year):
     print(df[(df["Año"] == year) & (df["Mes"] == month)])
 
 
-def get_bcrp_data(start, end, url):
-    response = requests.get(f"{url}/{start}/{end}")
+def get_bcrp_data(start_date: str, end_date: str, url: str):
+    response = requests.get(f"{url}/{start_date}/{end_date}")
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    dates_str = soup.find_all("td", class_="periodo") 
-    values = soup.find_all("td", class_="dato")
-    for date_str, value in zip(dates_str, values):
-        print(f"{date_str.getText().strip()} : {value.getText().strip()}")
+    periods_td = soup.find_all("td", class_="periodo") 
+    values_td = soup.find_all("td", class_="dato")
+    for period_td, value_td in zip(periods_td, values_td):
+        period = period_td.getText().strip()
+        value = value_td.getText().strip()
+        print(f"{period} : {value}")
 
 
-def get_unemployment_rate(start, end):
-    get_bcrp_data(start, end, URL_BASE_UNEMPLOYEMENT_RATE)
+def get_unemployment_rate(start_date: str, end_date: str):
+    get_bcrp_data(start_date, end_date, URL_BASE_UNEMPLOYEMENT_RATE)
 
 
-def get_copper_price(start_year, end_year, frecuency="MONTHLY"):
+def get_copper_price(start_year: int, end_year: int, frecuency: str="MONTHLY"):
     url = f"{URL_COPPER_PRICE}?cbFechaInicio={start_year}&cbFechaTermino={end_year}&cbFrecuencia={frecuency}&cbCalculo=NONE&cbFechaBase="
     response = requests.get(url)
     soup = BeautifulSoup(response.text, 'html.parser')

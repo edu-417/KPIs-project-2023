@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "betty"
 version = "0.1.0"
-description = ""
+description = "KPIs Betty project"
 authors = ["Eduardo Melendez <edgame127@gmail.com>"]
 readme = "README.md"
 
