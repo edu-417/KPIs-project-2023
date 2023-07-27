@@ -17,7 +17,8 @@ URL_EURO_EXCHANGE_RATE = f"{URL_BASE_BCRP}/diarias/resultados/PD04648PD/html"
 
 
 def get_electricity(start_date: str, end_date: str):
-    get_bcrp_data(start_date, end_date, URL_BASE_ELECTRICITY)
+    electricity_df = get_bcrp_data(start_date, end_date, URL_BASE_ELECTRICITY)
+    print(electricity_df)
 
 def get_pbi(date: str):
     # TODO
@@ -37,7 +38,8 @@ def get_pbi(date: str):
 
 
 def get_intern_demand(start_date: str, end_date: str):
-    get_bcrp_data(start_date, end_date, URL_BASE_INTERN_DEMAND)
+    intern_demand_df = get_bcrp_data(start_date, end_date, URL_BASE_INTERN_DEMAND)
+    print(intern_demand_df)
 
 
 def get_price_index(month: str, year: int):
@@ -54,14 +56,18 @@ def get_bcrp_data(start_date: str, end_date: str, url: str):
 
     periods_td = soup.find_all("td", class_="periodo") 
     values_td = soup.find_all("td", class_="dato")
-    for period_td, value_td in zip(periods_td, values_td):
-        period = period_td.getText().strip()
-        value = value_td.getText().strip()
-        print(f"{period} : {value}")
+
+    periods = [period_td.getText().strip() for period_td in periods_td]
+    values = [value_td.getText().strip() for value_td in values_td]
+    
+    data = {"Period": periods, "Value": values}
+
+    return pd.DataFrame(data)
 
 
 def get_unemployment_rate(start_date: str, end_date: str):
-    get_bcrp_data(start_date, end_date, URL_BASE_UNEMPLOYEMENT_RATE)
+    unemployment_rate_df = get_bcrp_data(start_date, end_date, URL_BASE_UNEMPLOYEMENT_RATE)
+    print(unemployment_rate_df)
 
 
 def get_raw_material_price(start_year: int, end_year: int, row_index: int, frequency: str="MONTHLY"):
@@ -102,11 +108,13 @@ def get_petroleum_wti_price(start_year: int, end_year: int, frequency: str="MONT
 
 
 def get_dolar_exchange_rate(start_date: str, end_date: str):
-    get_bcrp_data(start_date, end_date, URL_DOLAR_EXCHANGE_RATE)
+    dolar_exchange_rate_df = get_bcrp_data(start_date, end_date, URL_DOLAR_EXCHANGE_RATE)
+    print(dolar_exchange_rate_df)
 
 
 def get_euro_exchange_rate(start_date: str, end_date: str):
-    get_bcrp_data(start_date, end_date, URL_EURO_EXCHANGE_RATE)
+    euro_exchange_rate_df = get_bcrp_data(start_date, end_date, URL_EURO_EXCHANGE_RATE)
+    print(euro_exchange_rate_df)
 
 
 def main():
