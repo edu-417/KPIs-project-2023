@@ -7,9 +7,10 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 
-URL_BASE_BCRP = "https://estadisticas.bcrp.gob.pe/estadisticas/series/"
+URL_BASE_BCRP = "https://estadisticas.bcrp.gob.pe/estadisticas/series"
 URL_BASE_BCENTRAL_CHILE = "https://si3.bcentral.cl"
 URL_BASE_ELECTRICITY = f"{URL_BASE_BCRP}/mensuales/resultados/PD37966AM/html"
+URL_PBI = "https://www.inei.gob.pe/media/principales_indicadores/CalculoPBI_120.zip"
 URL_BASE_INTERN_DEMAND = f"{URL_BASE_BCRP}/trimestrales/resultados/PN02529AQ/html"
 URL_BASE_UNEMPLOYEMENT_RATE = f"{URL_BASE_BCRP}/mensuales/resultados/PN38063GM/html"
 URL_INDEX_PRICE = "https://www.inei.gob.pe/media/MenuRecursivo/indices_tematicos/02_indice-precios_al_consumidor-nivel_nacional_2b_16.xlsx"
@@ -29,17 +30,21 @@ def get_electricity(start_date: str, end_date: str):
 def get_pbi(date: str):
     logging.info("Getting PBI")
     logging.info("========================")
-    # TODO
-    # 1. Download File (url)
-    # 2. Descomprimir archivo descargado
-    # 3. Buscar archivo que comienza con ("VBA-PBI")
-    pd.set_option('display.max_colwidth', None)
-    df = pd.read_excel("CalculoPBI_120/VA-PBI 05 2023 B 2007 r.xlsx", usecols="A:B", skiprows=3)
-    df = df.dropna()
-    df["Año y Mes"] = df["Año y Mes"].astype("str")
+    file_content = requests.get(URL_PBI, verify=False).content
 
-    logging.debug(df[df["Año y Mes"] == date])
-    logging.info("Got PBI")
+    import zipfile
+    with zipfile.ZipFile(io.BytesIO(file_content)) as archive:
+        logging.debug(archive.namelist())
+
+        pbi_file_name = [file_name for file_name in archive.namelist() if "VA-PBI" in file_name][0]
+        logging.debug(f"pbi_file_name: {pbi_file_name}")
+        with archive.open(pbi_file_name) as file:
+            df = pd.read_excel(file, usecols="A:B", skiprows=3)
+            df = df.dropna()
+            df["Año y Mes"] = df["Año y Mes"].astype("str")
+
+            logging.debug(df[df["Año y Mes"] == date])
+            logging.info("Got PBI")
 
 
 def get_intern_demand(start_date: str, end_date: str):
@@ -58,7 +63,7 @@ def get_price_index(month: str, year: int):
     df = df.fillna(method="ffill")
     # print(df.tail(20))
     logging.debug(df[(df["Año"] == year) & (df["Mes"] == month)])
-    logging.info("Got PBI")
+    logging.info("Got Price Index")
 
 
 def get_bcrp_data(start_date: str, end_date: str, url: str):
@@ -155,7 +160,7 @@ def get_dolar_exchange(year: int, currency_code: str, param: str):
     }
 
     response = requests.post(URL_DOLAR_EXCHANGE, params=params, data=data)
-    logging.debug(response.text)
+    # logging.debug(response.text)
 
 
 def get_yen_dolar_exchange(year: int):
@@ -191,7 +196,7 @@ def main():
     get_price_index("Abril", 2023)
     #KPI 20
     get_copper_price(2023, 2023)
-    #KPI 20
+    #KPI 21
     get_petroleum_wti_price(2023, 2023)
 
 if __name__ == "__main__":
