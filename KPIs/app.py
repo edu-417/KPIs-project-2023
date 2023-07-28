@@ -8,20 +8,22 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 
-
-URL_BASE_BCRP = "https://estadisticas.bcrp.gob.pe/estadisticas/series"
+URL_BASE_BCRP = "https://www.bcrp.gob.pe"
+URL_BCRP_STATISTICS = f"{URL_BASE_BCRP}/estadisticas/series"
+URL_BCRP_DOCS = f"{URL_BASE_BCRP}/docs"
 URL_BASE_BCENTRAL_CHILE = "https://si3.bcentral.cl"
-URL_BASE_ELECTRICITY = f"{URL_BASE_BCRP}/mensuales/resultados/PD37966AM/html"
+URL_BASE_ELECTRICITY = f"{URL_BCRP_STATISTICS}/mensuales/resultados/PD37966AM/html"
 URL_PBI = "https://www.inei.gob.pe/media/principales_indicadores/CalculoPBI_120.zip"
 URL_BASE_INEI = "https://www.inei.gob.pe"
-URL_BASE_INTERN_DEMAND = f"{URL_BASE_BCRP}/trimestrales/resultados/PN02529AQ/html"
-URL_BASE_UNEMPLOYEMENT_RATE = f"{URL_BASE_BCRP}/mensuales/resultados/PN38063GM/html"
+URL_BASE_INTERN_DEMAND = f"{URL_BCRP_STATISTICS}/trimestrales/resultados/PN02529AQ/html"
+URL_BASE_UNEMPLOYEMENT_RATE = f"{URL_BCRP_STATISTICS}/mensuales/resultados/PN38063GM/html"
 URL_BASE_TOLL = f"{URL_BASE_INEI}/biblioteca-virtual/boletines/flujo-vehicular"
 URL_INDEX_PRICE = f"{URL_BASE_INEI}/media/MenuRecursivo/indices_tematicos/02_indice-precios_al_consumidor-nivel_nacional_2b_16.xlsx"
 URL_RAW_MATERIAL_PRICE = f"{URL_BASE_BCENTRAL_CHILE}/Siete/ES/Siete/Cuadro/CAP_EI/MN_EI11/EI_PROD_BAS/637185066927145616"
-URL_DOLAR_EXCHANGE_RATE = f"{URL_BASE_BCRP}/diarias/resultados/PD04638PD/html"
-URL_EURO_EXCHANGE_RATE = f"{URL_BASE_BCRP}/diarias/resultados/PD04648PD/html"
+URL_DOLAR_EXCHANGE_RATE = f"{URL_BCRP_STATISTICS}/diarias/resultados/PD04638PD/html"
+URL_EURO_EXCHANGE_RATE = f"{URL_BCRP_STATISTICS}/diarias/resultados/PD04648PD/html"
 URL_DOLAR_EXCHANGE = f"{URL_BASE_BCENTRAL_CHILE}/Indicadoressiete/secure/Serie.aspx"
+URL_EXPECTED_PBI = f"{URL_BCRP_DOCS}/Estadisticas/Encuestas/expectativas-pbi.xlsx"
 
 def get_electricity(start_date: str, end_date: str):
     logging.info("Getting Electricity(GWH)")
@@ -48,6 +50,7 @@ def get_vehicular_flow(year: str):
         pdf.tree.write('temp_vehicular_flow.xml', pretty_print=True)
 
         vehicular_months = pdf.tree.xpath('//LTPage[@pageid="17"]/LTTextLineHorizontal/LTTextBoxHorizontal[@index="5"]')
+        print(vehicular_months)
         month = vehicular_months[0].text
         logging.debug(month)
 
@@ -218,20 +221,33 @@ def get_yen_dolar_exchange(year: int, month: str):
     
     yen_df["Value"] /= 10000
 
-    print(yen_df)
+    # print(yen_df)
 
 def get_brazilian_real_dolar_exchange(year: int, month: str):
     logging.info("Getting REAL/DOLAR Exchange")
     logging.info("========================")
     real_df = get_dolar_exchange(year, month, "BRL",
                        "dQBoAHMAOABpAGgAMQB2AC4ALQBDAF8AdgBkAFIAUgBWAF8AbQB6AFgAOQBOAGIATgBwAEoAMQBNAE0ARAAuAGQAaQBmADMAUgBtAEsAMQBIAE0AcwBLADYAMwBDAHkAaQBQAFIARQBBAHMAaQBrAE8AZQBUAHoASQBLAEIALgB3AHkAYQBrAGUAWAB5AFcAZABBADcAVgBNADgAQgA0ADkAYwBsAFkAWgBIAG0ALgB1AFkAUQA=")
-    print(real_df)
+    # print(real_df)
+
+
+def get_expected_pbi(month: str, year: int):
+    logging.info("Getting Expected PBI")
+    logging.info("========================")
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+    }
+    file_content = requests.get(URL_EXPECTED_PBI, verify=False, headers=headers).content
+    df = pd.read_excel(io.BytesIO(file_content), usecols="A:D", skiprows=3, sheet_name="PBI")
+    logging.info(df.head(20))
+    logging.info("Got Expected PBI")
+
 
 def main():
     #KPI 1
     get_electricity("2023-4", "2023-6")
     # KPI 2
-    # get_vehicular_flow("2023")
+    get_vehicular_flow("2023")
     #KPI 3
     get_dolar_exchange_rate("2023-06-20", "2023-06-30")
     #KPI 4
@@ -242,6 +258,8 @@ def main():
     get_brazilian_real_dolar_exchange(2023, "Julio")
     #KPI 9
     get_pbi("202304")
+    #KPI 10
+    get_expected_pbi("Junio", 2023)
     #KPI 12
     get_intern_demand("2023-1", "2023-4")
     #KPI 13
