@@ -199,11 +199,13 @@ def get_dolar_exchange(year: int, month: str, currency_code: str, param: str):
         value_td = soup.find(id=id)
         values.append(value_td.getText().strip())
 
-    data = {"Value": values}
+    data = {"Day": np.arange(1, 31), "Value": values}
 
     df = pd.DataFrame(data)
     df.replace('', np.nan, inplace=True)
     df.dropna(inplace=True)
+    df["Value"] = df["Value"].str.replace(",", "")
+    df["Value"] = df["Value"].astype(float)
 
     return df
 
@@ -213,6 +215,8 @@ def get_yen_dolar_exchange(year: int, month: str):
     logging.info("========================")
     yen_df = get_dolar_exchange(year, month, "JPY",
                        "cgBnAE8AOQBlAGcAIwBiAFUALQBsAEcAYgBOAEkASQBCAEcAegBFAFkAeABkADgASAA2AG8AdgB2AFMAUgBYADIAQwBzAEEARQBMAG8AawBzACMATABOAHMARgB1ADIAeQBBAFAAZwBhADIAbABWAHcAXwBXAGgATAAkAFIAVAB1AEIAbAB3AFoAdQBRAFgAZwA5AHgAdgAwACQATwBZADcAMwAuAGIARwBFAFIASwAuAHQA")
+    
+    yen_df["Value"] /= 10000
 
     print(yen_df)
 
@@ -227,7 +231,7 @@ def main():
     #KPI 1
     get_electricity("2023-4", "2023-6")
     # KPI 2
-    get_vehicular_flow("2023")
+    # get_vehicular_flow("2023")
     #KPI 3
     get_dolar_exchange_rate("2023-06-20", "2023-06-30")
     #KPI 4
