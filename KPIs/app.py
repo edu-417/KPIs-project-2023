@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+import numpy as np
 from pdfquery import PDFQuery
 import requests
 import pandas as pd
@@ -21,7 +22,6 @@ URL_RAW_MATERIAL_PRICE = f"{URL_BASE_BCENTRAL_CHILE}/Siete/ES/Siete/Cuadro/CAP_E
 URL_DOLAR_EXCHANGE_RATE = f"{URL_BASE_BCRP}/diarias/resultados/PD04638PD/html"
 URL_EURO_EXCHANGE_RATE = f"{URL_BASE_BCRP}/diarias/resultados/PD04648PD/html"
 URL_DOLAR_EXCHANGE = f"{URL_BASE_BCENTRAL_CHILE}/Indicadoressiete/secure/Serie.aspx"
-
 
 def get_electricity(start_date: str, end_date: str):
     logging.info("Getting Electricity(GWH)")
@@ -47,8 +47,8 @@ def get_vehicular_flow(year: str):
         pdf.load()
         pdf.tree.write('temp_vehicular_flow.xml', pretty_print=True)
 
-        months = pdf.tree.xpath('//LTPage[@pageid="17"]/LTTextLineHorizontal/LTTextBoxHorizontal[@index="5"]')
-        month = months[0].text
+        vehicular_months = pdf.tree.xpath('//LTPage[@pageid="17"]/LTTextLineHorizontal/LTTextBoxHorizontal[@index="5"]')
+        month = vehicular_months[0].text
         logging.debug(month)
 
         amounts = pdf.tree.xpath('//LTPage[@pageid="17"]/LTTextLineHorizontal[@y0="715.163"]/LTTextBoxHorizontal')
@@ -178,7 +178,7 @@ def get_euro_exchange_rate(start_date: str, end_date: str):
     logging.info("Got Euro Exchange")
 
 
-def get_dolar_exchange(year: int, currency_code: str, param: str):
+def get_dolar_exchange(year: int, month: str, currency_code: str, param: str):
     params = {
         "gcode": f"PAR_{currency_code}",
         "param": param
@@ -190,22 +190,38 @@ def get_dolar_exchange(year: int, currency_code: str, param: str):
     }
 
     response = requests.post(URL_DOLAR_EXCHANGE, params=params, data=data)
-    # logging.debug(response.text)
+    soup = BeautifulSoup(response.text, 'html.parser')
 
 
-def get_yen_dolar_exchange(year: int):
+    values = []
+    for day in range(1, 31):
+        id = f"gr_ctl{(day + 1):02d}_{month}"
+        value_td = soup.find(id=id)
+        values.append(value_td.getText().strip())
+
+    data = {"Value": values}
+
+    df = pd.DataFrame(data)
+    df.replace('', np.nan, inplace=True)
+    df.dropna(inplace=True)
+
+    return df
+
+
+def get_yen_dolar_exchange(year: int, month: str):
     logging.info("Getting YEN/DOLAR Exchange")
     logging.info("========================")
-    get_dolar_exchange(year, "JPY",
+    yen_df = get_dolar_exchange(year, month, "JPY",
                        "cgBnAE8AOQBlAGcAIwBiAFUALQBsAEcAYgBOAEkASQBCAEcAegBFAFkAeABkADgASAA2AG8AdgB2AFMAUgBYADIAQwBzAEEARQBMAG8AawBzACMATABOAHMARgB1ADIAeQBBAFAAZwBhADIAbABWAHcAXwBXAGgATAAkAFIAVAB1AEIAbAB3AFoAdQBRAFgAZwA5AHgAdgAwACQATwBZADcAMwAuAGIARwBFAFIASwAuAHQA")
 
+    print(yen_df)
 
-def get_brazilian_real_dolar_exchange(year: int):
+def get_brazilian_real_dolar_exchange(year: int, month: str):
     logging.info("Getting REAL/DOLAR Exchange")
     logging.info("========================")
-    get_dolar_exchange(year, "BRL",
-                       "dQBoAHMAOABpAGgAMQB2AC4ALQBDAF8AdgBkAFIAUgBWAF8AbQB6AFgAOQBOAGIATgBwAEoAMQBNAE0ARAAuAGQAaQBmADMAUgBtAEsAMQBIAE0AcwBLADYAMwBDAHkAaQBQAFIARQBBAHMAaQBrAE8AZQBUAHoASQBLAEIALgB3AHkAYQBrAGUAWAB5AFcAZABBADcAVgBNADgAQgA0ADkAYwBsAFkAWgBIAG0ALgB1AFkAUQA")
-
+    real_df = get_dolar_exchange(year, month, "BRL",
+                       "dQBoAHMAOABpAGgAMQB2AC4ALQBDAF8AdgBkAFIAUgBWAF8AbQB6AFgAOQBOAGIATgBwAEoAMQBNAE0ARAAuAGQAaQBmADMAUgBtAEsAMQBIAE0AcwBLADYAMwBDAHkAaQBQAFIARQBBAHMAaQBrAE8AZQBUAHoASQBLAEIALgB3AHkAYQBrAGUAWAB5AFcAZABBADcAVgBNADgAQgA0ADkAYwBsAFkAWgBIAG0ALgB1AFkAUQA=")
+    print(real_df)
 
 def main():
     #KPI 1
@@ -217,9 +233,9 @@ def main():
     #KPI 4
     get_euro_exchange_rate("2023-06-20", "2023-06-30")
     #KPI 5
-    get_yen_dolar_exchange(2023)
+    get_yen_dolar_exchange(2023, "Julio")
     #KPI 6
-    get_brazilian_real_dolar_exchange(2023)
+    get_brazilian_real_dolar_exchange(2023, "Julio")
     #KPI 9
     get_pbi("202304")
     #KPI 12
