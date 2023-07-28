@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from pdfquery import PDFQuery
 import requests
 import pandas as pd
 import io
@@ -11,9 +12,11 @@ URL_BASE_BCRP = "https://estadisticas.bcrp.gob.pe/estadisticas/series"
 URL_BASE_BCENTRAL_CHILE = "https://si3.bcentral.cl"
 URL_BASE_ELECTRICITY = f"{URL_BASE_BCRP}/mensuales/resultados/PD37966AM/html"
 URL_PBI = "https://www.inei.gob.pe/media/principales_indicadores/CalculoPBI_120.zip"
+URL_BASE_INEI = "https://www.inei.gob.pe"
 URL_BASE_INTERN_DEMAND = f"{URL_BASE_BCRP}/trimestrales/resultados/PN02529AQ/html"
 URL_BASE_UNEMPLOYEMENT_RATE = f"{URL_BASE_BCRP}/mensuales/resultados/PN38063GM/html"
-URL_INDEX_PRICE = "https://www.inei.gob.pe/media/MenuRecursivo/indices_tematicos/02_indice-precios_al_consumidor-nivel_nacional_2b_16.xlsx"
+URL_BASE_TOLL = f"{URL_BASE_INEI}/biblioteca-virtual/boletines/flujo-vehicular"
+URL_INDEX_PRICE = f"{URL_BASE_INEI}/media/MenuRecursivo/indices_tematicos/02_indice-precios_al_consumidor-nivel_nacional_2b_16.xlsx"
 URL_RAW_MATERIAL_PRICE = f"{URL_BASE_BCENTRAL_CHILE}/Siete/ES/Siete/Cuadro/CAP_EI/MN_EI11/EI_PROD_BAS/637185066927145616"
 URL_DOLAR_EXCHANGE_RATE = f"{URL_BASE_BCRP}/diarias/resultados/PD04638PD/html"
 URL_EURO_EXCHANGE_RATE = f"{URL_BASE_BCRP}/diarias/resultados/PD04648PD/html"
@@ -26,6 +29,33 @@ def get_electricity(start_date: str, end_date: str):
     electricity_df = get_bcrp_data(start_date, end_date, URL_BASE_ELECTRICITY)
     logging.debug(electricity_df)
     logging.info("Got Electricity")
+
+
+def get_vehicular_flow(year: str):
+    pdf_file_name = "temp_vehicular_flow.pdf"
+
+    response = requests.get(f"{URL_BASE_TOLL}/{year}/1", verify=False)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    row1 = soup.find(id="row_1")
+
+    pdf_link = f"{URL_BASE_INEI}{row1.get('rel')}"
+    response = requests.get(pdf_link, verify=False)
+
+    with open(pdf_file_name, 'wb') as pdf_file:
+        pdf_file.write(response.content)
+        pdf = PDFQuery(pdf_file_name)
+        pdf.load()
+        pdf.tree.write('temp_vehicular_flow.xml', pretty_print=True)
+
+        months = pdf.tree.xpath('//LTPage[@pageid="17"]/LTTextLineHorizontal/LTTextBoxHorizontal[@index="5"]')
+        month = months[0].text
+        logging.debug(month)
+
+        amounts = pdf.tree.xpath('//LTPage[@pageid="17"]/LTTextLineHorizontal[@y0="715.163"]/LTTextBoxHorizontal')
+        amount = amounts[len(amounts) - 1].text
+        amount = amount[len(amount)-11:].replace(" ", "")
+        logging.debug(amount)
+
 
 def get_pbi(date: str):
     logging.info("Getting PBI")
@@ -166,18 +196,22 @@ def get_dolar_exchange(year: int, currency_code: str, param: str):
 def get_yen_dolar_exchange(year: int):
     logging.info("Getting YEN/DOLAR Exchange")
     logging.info("========================")
-    get_dolar_exchange(year, "JPY", "cgBnAE8AOQBlAGcAIwBiAFUALQBsAEcAYgBOAEkASQBCAEcAegBFAFkAeABkADgASAA2AG8AdgB2AFMAUgBYADIAQwBzAEEARQBMAG8AawBzACMATABOAHMARgB1ADIAeQBBAFAAZwBhADIAbABWAHcAXwBXAGgATAAkAFIAVAB1AEIAbAB3AFoAdQBRAFgAZwA5AHgAdgAwACQATwBZADcAMwAuAGIARwBFAFIASwAuAHQA")
+    get_dolar_exchange(year, "JPY",
+                       "cgBnAE8AOQBlAGcAIwBiAFUALQBsAEcAYgBOAEkASQBCAEcAegBFAFkAeABkADgASAA2AG8AdgB2AFMAUgBYADIAQwBzAEEARQBMAG8AawBzACMATABOAHMARgB1ADIAeQBBAFAAZwBhADIAbABWAHcAXwBXAGgATAAkAFIAVAB1AEIAbAB3AFoAdQBRAFgAZwA5AHgAdgAwACQATwBZADcAMwAuAGIARwBFAFIASwAuAHQA")
 
 
 def get_brazilian_real_dolar_exchange(year: int):
     logging.info("Getting REAL/DOLAR Exchange")
     logging.info("========================")
-    get_dolar_exchange(year, "BRL", "dQBoAHMAOABpAGgAMQB2AC4ALQBDAF8AdgBkAFIAUgBWAF8AbQB6AFgAOQBOAGIATgBwAEoAMQBNAE0ARAAuAGQAaQBmADMAUgBtAEsAMQBIAE0AcwBLADYAMwBDAHkAaQBQAFIARQBBAHMAaQBrAE8AZQBUAHoASQBLAEIALgB3AHkAYQBrAGUAWAB5AFcAZABBADcAVgBNADgAQgA0ADkAYwBsAFkAWgBIAG0ALgB1AFkAUQA")
+    get_dolar_exchange(year, "BRL",
+                       "dQBoAHMAOABpAGgAMQB2AC4ALQBDAF8AdgBkAFIAUgBWAF8AbQB6AFgAOQBOAGIATgBwAEoAMQBNAE0ARAAuAGQAaQBmADMAUgBtAEsAMQBIAE0AcwBLADYAMwBDAHkAaQBQAFIARQBBAHMAaQBrAE8AZQBUAHoASQBLAEIALgB3AHkAYQBrAGUAWAB5AFcAZABBADcAVgBNADgAQgA0ADkAYwBsAFkAWgBIAG0ALgB1AFkAUQA")
 
 
 def main():
     #KPI 1
     get_electricity("2023-4", "2023-6")
+    # KPI 2
+    get_vehicular_flow("2023")
     #KPI 3
     get_dolar_exchange_rate("2023-06-20", "2023-06-30")
     #KPI 4
