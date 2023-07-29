@@ -16,6 +16,7 @@ URL_BCRP_STATISTICS = "https://estadisticas.bcrp.gob.pe/estadisticas/series"
 URL_BCRP_DOCS = f"{URL_BASE_BCRP}/docs"
 URL_BASE_BCENTRAL_CHILE = "https://si3.bcentral.cl"
 URL_BASE_ELECTRICITY = f"{URL_BCRP_STATISTICS}/mensuales/resultados/PD37966AM/html"
+URL_BASE_ML = "https://mlback.btgpactual.cl/instruments/"
 URL_PBI = "https://www.inei.gob.pe/media/principales_indicadores/CalculoPBI_120.zip"
 URL_BASE_INEI = "https://www.inei.gob.pe"
 URL_BASE_INTERN_DEMAND = f"{URL_BCRP_STATISTICS}/trimestrales/resultados/PN02529AQ/html"
@@ -125,12 +126,12 @@ def get_bcrp_data(start_date: str, end_date: str, url: str):
     response = requests.get(f"{url}/{start_date}/{end_date}")
     soup = BeautifulSoup(response.text, 'html.parser')
 
-    periods_td = soup.find_all("td", class_="periodo") 
+    periods_td = soup.find_all("td", class_="periodo")
     values_td = soup.find_all("td", class_="dato")
 
     periods = [period_td.getText().strip() for period_td in periods_td]
     values = [value_td.getText().strip() for value_td in values_td]
-    
+
     data = {"Period": periods, "Value": values}
 
     return pd.DataFrame(data)
@@ -142,6 +143,69 @@ def get_unemployment_rate(start_date: str, end_date: str):
     unemployment_rate_df = get_bcrp_data(start_date, end_date, URL_BASE_UNEMPLOYEMENT_RATE)
     logging.debug(unemployment_rate_df)
     logging.info("Got Unemployment Rate")
+
+
+def get_ml_rate(rate_id, start_date, end_date):
+    start_date = f"{start_date[:len(start_date) - 2]}01" # guarantee that first month exists
+
+    url = f"{URL_BASE_ML}{rate_id}/historicalData"
+    params = {
+        "dateStart": start_date,
+        "dateEnd": end_date,
+    }
+    headers = {
+        "User-Agent": "Mozilla/5.0 (X11; CrOS x86_64 12871.102.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.141 Safari/537.36"
+    }
+    response = requests.get(url, params=params, headers=headers, verify=False)
+    jsonResponse = response.json()
+
+    last_days_dict = {}
+    rates_dict = {}
+    for value in jsonResponse["chart"]:
+        date = pd.to_datetime(value["x"], utc=True, unit='ms')
+        rate = value["y"]
+        year_month = f"{date.year}-{date.month}"
+        if year_month in last_days_dict:
+            if date.day > last_days_dict[year_month]:
+                last_days_dict[year_month] = date.day
+                rates_dict[year_month] = rate
+        else:
+            last_days_dict[year_month] = date.day
+            rates_dict[year_month] = rate
+
+    date_list = []
+    for key in last_days_dict:
+        date_list.append(f"{key}-{last_days_dict[key]}")
+
+    df = pd.DataFrame(zip(date_list, rates_dict.values()), columns=['date', 'rate'])
+    return df
+
+
+def get_5years_treasury_bill_rate(start_date: str, end_date: str):
+    logging.info("Getting 5 Years Treasury Bill Rates")
+    logging.info("========================")
+    rate_id = "UlRFLlVTVFI1WS5JU0YuRk0"
+    df = get_ml_rate(rate_id, start_date, end_date)
+    logging.debug(df)
+    logging.info("Got 5 Years Treasury Bill Rates")
+
+
+def get_10years_treasury_bill_rate(start_date: str, end_date: str):
+    logging.info("Getting 10 Years Treasury Bill Rates")
+    logging.info("========================")
+    rate_id = "UlRFLlVTVFIxMFkuSVNGLkZN"
+    df = get_ml_rate(rate_id, start_date, end_date)
+    logging.debug(df)
+    logging.info("Got 10 Years Treasury Bill Rates")
+
+
+def get_djones_rate(start_date: str, end_date: str):
+    logging.info("Getting Dow Jones Rates")
+    logging.info("========================")
+    rate_id = "SU5ELkRPV0pPTkVTLklORkJPTA"
+    df = get_ml_rate(rate_id, start_date, end_date)
+    logging.debug(df)
+    logging.info("Got Dow Jones Rates")
 
 
 def get_raw_material_price(start_year: int, end_year: int, row_index: int, frequency: str="MONTHLY"):
@@ -182,7 +246,7 @@ def get_petroleum_wti_price(start_year: int, end_year: int, frequency: str="MONT
     PETROLEUM_WTI_INDEX = 9
 
     petroleum_wti_df = get_raw_material_price(start_year, end_year, PETROLEUM_WTI_INDEX, frequency)
-    
+
     logging.debug(petroleum_wti_df)
     logging.info("Got Petroleum WTI Price")
 
@@ -217,13 +281,11 @@ def get_dolar_exchange(year: int, month: str, currency_code: str, param: str):
     response = requests.post(URL_DOLAR_EXCHANGE, params=params, data=data)
     soup = BeautifulSoup(response.text, 'html.parser')
 
-
     values = []
     for day in range(1, 31):
         id = f"gr_ctl{(day + 1):02d}_{month}"
         value_td = soup.find(id=id)
         values.append(value_td.getText().strip())
-
     data = {"Day": np.arange(1, 31), "Value": values}
 
     df = pd.DataFrame(data)
@@ -240,7 +302,7 @@ def get_yen_dolar_exchange(year: int, month: str):
     logging.info("========================")
     yen_df = get_dolar_exchange(year, month, "JPY",
                        "cgBnAE8AOQBlAGcAIwBiAFUALQBsAEcAYgBOAEkASQBCAEcAegBFAFkAeABkADgASAA2AG8AdgB2AFMAUgBYADIAQwBzAEEARQBMAG8AawBzACMATABOAHMARgB1ADIAeQBBAFAAZwBhADIAbABWAHcAXwBXAGgATAAkAFIAVAB1AEIAbAB3AFoAdQBRAFgAZwA5AHgAdgAwACQATwBZADcAMwAuAGIARwBFAFIASwAuAHQA")
-    
+
     yen_df["Value"] /= 10000
 
     logging.debug(yen_df)
@@ -266,7 +328,7 @@ def get_expected_pbi(year: int):
     columns = df.columns
     df["Expected Year"] = df["Fecha"]
     condition = df["Expected Year"].str.contains("Expectativas")
-    df.loc[condition == False, "Expected Year"] = np.nan    
+    df.loc[condition == False, "Expected Year"] = np.nan
     df["Expected Year"] = df["Expected Year"].fillna(method="ffill")
     df = df.loc[df["Expected Year"] == f"Expectativas anuales de {year}", columns]
     logging.debug(df)
@@ -294,12 +356,18 @@ def main():
     get_intern_demand("2023-1", "2023-4")
     #KPI 13
     get_unemployment_rate("2023-1", "2023-6")
+    #KPI 16
+    get_5years_treasury_bill_rate("2022-06-30", "2023-07-31")
+    # KPI 17
+    get_10years_treasury_bill_rate("2022-06-30", "2023-07-31")
     #KPI 18-19
     get_price_index("Abril", 2023)
     #KPI 20
     get_copper_price(2023, 2023)
     #KPI 21
     get_petroleum_wti_price(2023, 2023)
+    # KPI 24
+    get_djones_rate("2022-06-30", "2023-07-31")
 
 if __name__ == "__main__":
     main()
