@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import numpy as np
 from pdfquery import PDFQuery
+from pdfquery.cache import FileCache
 import requests
 import pandas as pd
 import io
@@ -8,7 +9,7 @@ import logging
 import coloredlogs
 
 logging.basicConfig(level=logging.INFO)
-coloredlogs.install(level=logging.DEBUG)
+coloredlogs.install(level=logging.INFO)
 
 URL_BASE_BCRP = "https://www.bcrp.gob.pe"
 URL_BCRP_STATISTICS = "https://estadisticas.bcrp.gob.pe/estadisticas/series"
@@ -36,6 +37,8 @@ def get_electricity(start_date: str, end_date: str):
 
 
 def get_vehicular_flow(year: str):
+    logging.info("Getting Vehicular Flow")
+    logging.info("========================")
     pdf_file_name = "temp_vehicular_flow.pdf"
 
     response = requests.get(f"{URL_BASE_TOLL}/{year}/1", verify=False)
@@ -47,19 +50,36 @@ def get_vehicular_flow(year: str):
 
     with open(pdf_file_name, 'wb') as pdf_file:
         pdf_file.write(response.content)
-        pdf = PDFQuery(pdf_file_name)
+        pdf = PDFQuery(pdf_file_name, parse_tree_cacher=FileCache("."))
         pdf.load()
-        pdf.tree.write('temp_vehicular_flow.xml', pretty_print=True)
+        # pdf.tree.write('temp_vehicular_flow.xml', pretty_print=True)
 
-        vehicular_months = pdf.tree.xpath('//LTPage[@pageid="17"]/LTTextLineHorizontal/LTTextBoxHorizontal[@index="5"]')
-        print(vehicular_months)
-        month = vehicular_months[0].text
+        lttext_months = pdf.tree.xpath(
+            '//LTPage[@pageid="13"]/LTRect/LTTextLineVertical/LTTextBoxVertical')  # [@y0="758.48"]')
+        max_y0 = 0.0
+        month = ""
+        for i in lttext_months:
+            y0 = float(i.get('y0'))
+            if y0 > max_y0:
+                y0 = max_y0
+                month = i.text
         logging.debug(month)
 
-        amounts = pdf.tree.xpath('//LTPage[@pageid="17"]/LTTextLineHorizontal[@y0="715.163"]/LTTextBoxHorizontal')
-        amount = amounts[len(amounts) - 1].text
-        amount = amount[len(amount)-11:].replace(" ", "")
+        lttext_amounts = pdf.tree.xpath(
+            '//LTPage[@pageid="13"]/LTTextLineVertical/LTTextBoxVertical')  # [@y0="743.368"]')
+        min_dist = float("inf")
+        amount = ""
+        for i in lttext_amounts:
+            y0 = float(i.get('y0'))
+            x0 = float(i.get('x0'))
+            dist = (900 - y0) + x0
+            if dist < min_dist:
+                min_dist = dist
+                amount = i.text
+        amount = amount[max(len(amount) - 11, 0):].replace(" ", "")
         logging.debug(amount)
+
+        logging.info("Got Vehicular Flow")
 
 
 def get_pbi(date: str):
@@ -257,7 +277,7 @@ def main():
     #KPI 1
     get_electricity("2023-4", "2023-6")
     # KPI 2
-    # get_vehicular_flow("2023")
+    get_vehicular_flow("2023")
     #KPI 3
     get_dolar_exchange_rate("2023-06-20", "2023-06-30")
     #KPI 4
