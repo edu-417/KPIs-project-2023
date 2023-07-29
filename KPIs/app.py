@@ -223,25 +223,33 @@ def get_yen_dolar_exchange(year: int, month: str):
     
     yen_df["Value"] /= 10000
 
-    # print(yen_df)
+    logging.debug(yen_df)
 
 def get_brazilian_real_dolar_exchange(year: int, month: str):
     logging.info("Getting REAL/DOLAR Exchange")
     logging.info("========================")
     real_df = get_dolar_exchange(year, month, "BRL",
                        "dQBoAHMAOABpAGgAMQB2AC4ALQBDAF8AdgBkAFIAUgBWAF8AbQB6AFgAOQBOAGIATgBwAEoAMQBNAE0ARAAuAGQAaQBmADMAUgBtAEsAMQBIAE0AcwBLADYAMwBDAHkAaQBQAFIARQBBAHMAaQBrAE8AZQBUAHoASQBLAEIALgB3AHkAYQBrAGUAWAB5AFcAZABBADcAVgBNADgAQgA0ADkAYwBsAFkAWgBIAG0ALgB1AFkAUQA=")
-    # print(real_df)
+    logging.debug(real_df)
 
 
-def get_expected_pbi(month: str, year: int):
+def get_expected_pbi(year: int):
     logging.info("Getting Expected PBI")
     logging.info("========================")
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+        "Accept-Language": "es-ES,es;q=0.9,en;q=0.8"
     }
     file_content = requests.get(URL_EXPECTED_PBI, verify=False, headers=headers).content
+    logging.debug(file_content)
     df = pd.read_excel(io.BytesIO(file_content), usecols="A:D", skiprows=3, sheet_name="PBI")
-    logging.info(df.head(20))
+    columns = df.columns
+    df["Expected Year"] = df["Fecha"]
+    condition = df["Expected Year"].str.contains("Expectativas")
+    df.loc[condition == False, "Expected Year"] = np.nan    
+    df["Expected Year"] = df["Expected Year"].fillna(method="ffill")
+    df = df.loc[df["Expected Year"] == f"Expectativas anuales de {year}", columns]
+    logging.debug(df)
     logging.info("Got Expected PBI")
 
 
@@ -249,7 +257,7 @@ def main():
     #KPI 1
     get_electricity("2023-4", "2023-6")
     # KPI 2
-    get_vehicular_flow("2023")
+    # get_vehicular_flow("2023")
     #KPI 3
     get_dolar_exchange_rate("2023-06-20", "2023-06-30")
     #KPI 4
@@ -261,7 +269,7 @@ def main():
     #KPI 9
     get_pbi("202304")
     #KPI 10
-    get_expected_pbi("Junio", 2023)
+    get_expected_pbi(2023)
     #KPI 12
     get_intern_demand("2023-1", "2023-4")
     #KPI 13
