@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 coloredlogs.install(level=logging.DEBUG)
 
 URL_BASE_BCRP = "https://www.bcrp.gob.pe"
-URL_BCRP_STATISTICS = f"{URL_BASE_BCRP}/estadisticas/series"
+URL_BCRP_STATISTICS = "https://estadisticas.bcrp.gob.pe/estadisticas/series"
 URL_BCRP_DOCS = f"{URL_BASE_BCRP}/docs"
 URL_BASE_BCENTRAL_CHILE = "https://si3.bcentral.cl"
 URL_BASE_ELECTRICITY = f"{URL_BCRP_STATISTICS}/mensuales/resultados/PD37966AM/html"
