@@ -5,8 +5,10 @@ import requests
 import pandas as pd
 import io
 import logging
+import coloredlogs
 
 logging.basicConfig(level=logging.INFO)
+coloredlogs.install(level=logging.DEBUG)
 
 URL_BASE_BCRP = "https://www.bcrp.gob.pe"
 URL_BCRP_STATISTICS = f"{URL_BASE_BCRP}/estadisticas/series"
