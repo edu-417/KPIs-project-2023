@@ -9,7 +9,6 @@ from bs4 import BeautifulSoup
 from pdfquery import PDFQuery
 from pdfquery.cache import FileCache
 
-logging.basicConfig(level=logging.INFO)
 coloredlogs.install(level=logging.INFO)
 
 URL_BASE_BCRP = "https://www.bcrp.gob.pe"
