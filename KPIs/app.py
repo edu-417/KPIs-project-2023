@@ -316,6 +316,9 @@ def get_dolar_exchange_rate(start_date: str, end_date: str):
     dolar_exchange_rate_df = get_bcrp_data(
         start_date, end_date, URL_DOLAR_EXCHANGE_RATE
     )
+    dolar_exchange_rate_df = dolar_exchange_rate_df[
+        dolar_exchange_rate_df["Value"] != "n.d."
+    ]
     logging.debug(dolar_exchange_rate_df)
     logging.info("Got Dolar Exchange")
 
@@ -326,6 +329,9 @@ def get_euro_exchange_rate(start_date: str, end_date: str):
     euro_exchange_rate_df = get_bcrp_data(
         start_date, end_date, URL_EURO_EXCHANGE_RATE
     )
+    euro_exchange_rate_df = euro_exchange_rate_df[
+        euro_exchange_rate_df["Value"] != "n.d."
+    ]
     logging.debug(euro_exchange_rate_df)
     logging.info("Got Euro Exchange")
 
