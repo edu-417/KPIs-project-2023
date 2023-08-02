@@ -26,10 +26,8 @@ URL_BASE_ELECTRICITY = (
     f"{URL_BCRP_STATISTICS}/mensuales/resultados/PD37966AM/html"
 )
 URL_BASE_ML = "https://mlback.btgpactual.cl/instruments/"
-URL_SP_BVL = (
-    "https://www.spglobal.com/spdji/es/util/redesign/index-data/"
-    "get-performance-data-for-datawidget-redesign.dot"
-)
+URL_SP_BVL = "https://www.spglobal.com/spdji/es/util/redesign/index-data/get-performance-data-for-datawidget-redesign.dot"
+URL_SBS_TC = "https://www.sbs.gob.pe/app/pp/sistip_portal/paginas/publicacion/tipocambiopromedio.aspx"
 URL_PBI = (
     "https://www.inei.gob.pe/media/principales_indicadores/CalculoPBI_120.zip"
 )
@@ -119,7 +117,7 @@ def get_vehicular_flow(year: str):
             if dist < min_dist:
                 min_dist = dist
                 amount = i.text
-        amount = amount[max(len(amount) - 11, 0) :].replace(" ", "")
+        amount = amount[max(len(amount) - 11, 0):].replace(" ", "")
         logging.debug(amount)
 
         logging.info("Got Vehicular Flow")
@@ -292,18 +290,14 @@ def get_sp_bvl_general_index(start_date: str, end_date: str):
     jsonResponse = response.json()
 
     start_date = get_month_1st(start_date)
-    df = format_values_per_month(
-        jsonResponse["indexLevelsHolder"]["indexLevels"],
-        start_date,
-        "indexValue",
-        "effectiveDate",
-    )
+    df = format_values_per_month(jsonResponse["indexLevelsHolder"]["indexLevels"], start_date, "indexValue",
+                                 "effectiveDate")
     logging.debug(df)
     logging.info("Got SP BVL General indexes")
 
 
 def get_raw_material_price(
-    start_year: int, end_year: int, row_index: int, frequency: str = "MONTHLY"
+        start_year: int, end_year: int, row_index: int, frequency: str = "MONTHLY"
 ):
     params = {
         "cbFechaInicio": start_year,
@@ -332,7 +326,7 @@ def get_raw_material_price(
 
 
 def get_copper_price(
-    start_year: int, end_year: int, frequency: str = "MONTHLY"
+        start_year: int, end_year: int, frequency: str = "MONTHLY"
 ):
     logging.info("Getting Copper Price")
     logging.info("========================")
@@ -348,7 +342,7 @@ def get_copper_price(
 
 
 def get_petroleum_wti_price(
-    start_year: int, end_year: int, frequency: str = "MONTHLY"
+        start_year: int, end_year: int, frequency: str = "MONTHLY"
 ):
     logging.info("Getting Petroleum WTI Price")
     logging.info("========================")
@@ -370,7 +364,7 @@ def get_dolar_exchange_rate(start_date: str, end_date: str):
     )
     dolar_exchange_rate_df = dolar_exchange_rate_df[
         dolar_exchange_rate_df["Value"] != "n.d."
-    ]
+        ]
     logging.debug(dolar_exchange_rate_df)
     logging.info("Got Dolar Exchange")
 
@@ -383,7 +377,7 @@ def get_euro_exchange_rate(start_date: str, end_date: str):
     )
     euro_exchange_rate_df = euro_exchange_rate_df[
         euro_exchange_rate_df["Value"] != "n.d."
-    ]
+        ]
     logging.debug(euro_exchange_rate_df)
     logging.info("Got Euro Exchange")
 
@@ -501,6 +495,39 @@ def get_peruvian_goverment_bond(start_date: str, end_date: str):
     logging.info("Got 10 Years Peruvian Goverment Bond")
 
 
+def get_sbs_usd_exchange_rate(date: str):
+    headers = {
+        'user-agent': USER_AGENT
+    }
+
+    with requests.Session() as s:
+        r = s.get(URL_SBS_TC, headers=headers)
+        soup = BeautifulSoup(r.content, "html.parser")
+
+        data = dict()
+        data['__EVENTVALIDATION'] = soup.find('input', attrs={'id': '__EVENTVALIDATION'})['value']
+        data['__VIEWSTATE'] = soup.find('input', attrs={'id': '__VIEWSTATE'})['value']
+        data['__VIEWSTATEGENERATOR'] = soup.find('input', attrs={'id': '__VIEWSTATEGENERATOR'})['value']
+        data['ctl00$MainScriptManager'] = 'ctl00$cphContent$updConsulta|ctl00$cphContent$btnConsultar'
+        data['ctl00$cphContent$btnConsultar'] = 'Consultar'
+
+        date_time = datetime.strptime(date, '%Y-%m-%d')
+        date_time_str = date_time.strftime('%Y-%m-%d-%H-%M-%S')
+        date_str = date_time.strftime('%d/%m/%Y')
+        now_str = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+
+        data['ctl00$cphContent$rdpDate'] = date
+        data['ctl00$cphContent$rdpDate$dateInput'] =  date_str
+        data['ctl00_cphContent_rdpDate_dateInput_ClientState'] = f'{{"enabled":true,"emptyMessage":"","validationText":"{date_time_str}","valueAsString":"{date_time_str}","minDateStr":"1000-01-01-00-00-00","maxDateStr":"{now_str}","lastSetTextBoxValue":"{date_str}"}}'
+
+        p = s.post(URL_SBS_TC, data=data, headers=headers)
+        soup = BeautifulSoup(p.content, "html.parser")
+        values = soup.css.select(
+            "#ctl00_cphContent_rgTipoCambio_ctl00__0 > td:nth-child(3)")  # soup.css.select("#tbodyGrid > tr > td > .sname")
+        value = values[0].getText()
+        logging.debug(value)
+
+
 def main():
     # KPI 1
     get_electricity("2023-4", "2023-6")
@@ -540,6 +567,8 @@ def main():
     get_sp_bvl_general_index("2022-06-30", "2023-07-31")
     # KPI 24
     get_djones_rate("2022-06-30", "2023-07-31")
+    # KPI 29
+    get_sbs_usd_exchange_rate("2023-06-20")
 
 
 if __name__ == "__main__":
