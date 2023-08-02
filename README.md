@@ -1,4 +1,8 @@
-# BETTY PROJECT 2023
+# betty-project-2023
+
+This project is intendend to automate getting KPIs from some web pages.
+
+## Setup
 
 Install poetry (Linux)
 ```bash
@@ -15,7 +19,7 @@ Install Dependencies
 poetry install
 ```
 
-Execute
+## Execution
 ```bash
 poetry run python KPIs/app.py
 ```
