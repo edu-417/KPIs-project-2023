@@ -1,19 +1,22 @@
 import io
 import logging
+import zipfile
+from datetime import datetime
 
 import coloredlogs
 import numpy as np
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
 from pdfquery import PDFQuery
 from pdfquery.cache import FileCache
 
 coloredlogs.install(level=logging.INFO)
 
-USER_AGENT = ("Mozilla/5.0 (X11; CrOS x86_64 12871.102.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.141 "
-              "Safari/537.36")
+USER_AGENT = (
+    "Mozilla/5.0 (X11; CrOS x86_64 12871.102.0) AppleWebKit/537.36 (KHTML, like"
+    " Gecko) Chrome/81.0.4044.141 Safari/537.36"
+)
 
 URL_BASE_BCRP = "https://www.bcrp.gob.pe"
 URL_BCRP_STATISTICS = "https://estadisticas.bcrp.gob.pe/estadisticas/series"
@@ -23,7 +26,10 @@ URL_BASE_ELECTRICITY = (
     f"{URL_BCRP_STATISTICS}/mensuales/resultados/PD37966AM/html"
 )
 URL_BASE_ML = "https://mlback.btgpactual.cl/instruments/"
-URL_SP_BVL = "https://www.spglobal.com/spdji/es/util/redesign/index-data/get-performance-data-for-datawidget-redesign.dot"
+URL_SP_BVL = (
+    "https://www.spglobal.com/spdji/es/util/redesign/index-data/"
+    "get-performance-data-for-datawidget-redesign.dot"
+)
 URL_PBI = (
     "https://www.inei.gob.pe/media/principales_indicadores/CalculoPBI_120.zip"
 )
@@ -118,8 +124,6 @@ def get_pbi(date: str):
     logging.info("========================")
     file_content = requests.get(URL_PBI, verify=False).content
 
-    import zipfile
-
     with zipfile.ZipFile(io.BytesIO(file_content)) as archive:
         logging.debug(archive.namelist())
 
@@ -174,7 +178,9 @@ def get_bcrp_data(start_date: str, end_date: str, url: str):
     return pd.DataFrame(data)
 
 
-def format_values_per_month(data, start_date_str: str, index_value_name: str, index_date_name: str):
+def format_values_per_month(
+    data, start_date_str: str, index_value_name: str, index_date_name: str
+):
     last_days_dict = {}
     rates_dict = {}
 
@@ -231,9 +237,7 @@ def get_ml_rate(rate_id: str, start_date: str, end_date: str):
         "dateStart": start_date,
         "dateEnd": end_date,
     }
-    headers = {
-        "User-Agent": USER_AGENT
-    }
+    headers = {"User-Agent": USER_AGENT}
     response = requests.get(url, params=params, headers=headers, verify=False)
     jsonResponse = response.json()
 
@@ -277,14 +281,17 @@ def get_sp_bvl_general_index(start_date: str, end_date: str):
         "language_id": "2",
         "_": end_date,
     }
-    headers = {
-        "User-Agent": USER_AGENT
-    }
+    headers = {"User-Agent": USER_AGENT}
     response = requests.get(url, params=params, headers=headers, verify=False)
     jsonResponse = response.json()
 
     start_date = get_month_1st(start_date)
-    df = format_values_per_month(jsonResponse["indexLevelsHolder"]["indexLevels"], start_date, "indexValue", "effectiveDate")
+    df = format_values_per_month(
+        jsonResponse["indexLevelsHolder"]["indexLevels"],
+        start_date,
+        "indexValue",
+        "effectiveDate",
+    )
     logging.debug(df)
     logging.info("Got SP BVL General indexes")
 
