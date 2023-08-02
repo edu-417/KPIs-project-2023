@@ -61,6 +61,9 @@ URL_DOLAR_EXCHANGE = (
 URL_EXPECTED_PBI = (
     f"{URL_BCRP_DOCS}/Estadisticas/Encuestas/expectativas-pbi.xlsx"
 )
+URL_MONETARY_POLICIE_RATE = (
+    f"{URL_BCRP_STATISTICS}/diarias/resultados/PD12301MD/html"
+)
 
 
 def get_electricity(start_date: str, end_date: str):
@@ -469,6 +472,18 @@ def get_expected_pbi(year: int):
     logging.info("Got Expected PBI")
 
 
+def get_monetary_policie_rate(start_date: str, end_date: str):
+    monetary_policie_rate_df = get_bcrp_data(
+        start_date, end_date, URL_MONETARY_POLICIE_RATE
+    )
+
+    monetary_policie_rate_df = monetary_policie_rate_df[
+        monetary_policie_rate_df["Value"] != "n.d."
+    ]
+
+    logging.info(monetary_policie_rate_df)
+
+
 def main():
     # KPI 1
     get_electricity("2023-4", "2023-6")
@@ -490,6 +505,9 @@ def main():
     get_intern_demand("2023-1", "2023-4")
     # KPI 13
     get_unemployment_rate("2023-1", "2023-6")
+    # KPI 14
+    get_monetary_policie_rate("2023-07-01", "2023-07-31")
+    # KPI 15
     # KPI 16
     get_5years_treasury_bill_rate("2022-06-30", "2023-07-31")
     # KPI 17
