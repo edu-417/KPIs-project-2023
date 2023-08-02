@@ -6,10 +6,14 @@ import numpy as np
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime
 from pdfquery import PDFQuery
 from pdfquery.cache import FileCache
 
 coloredlogs.install(level=logging.INFO)
+
+USER_AGENT = ("Mozilla/5.0 (X11; CrOS x86_64 12871.102.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.141 "
+              "Safari/537.36")
 
 URL_BASE_BCRP = "https://www.bcrp.gob.pe"
 URL_BCRP_STATISTICS = "https://estadisticas.bcrp.gob.pe/estadisticas/series"
@@ -19,6 +23,7 @@ URL_BASE_ELECTRICITY = (
     f"{URL_BCRP_STATISTICS}/mensuales/resultados/PD37966AM/html"
 )
 URL_BASE_ML = "https://mlback.btgpactual.cl/instruments/"
+URL_SP_BVL = "https://www.spglobal.com/spdji/es/util/redesign/index-data/get-performance-data-for-datawidget-redesign.dot"
 URL_PBI = (
     "https://www.inei.gob.pe/media/principales_indicadores/CalculoPBI_120.zip"
 )
@@ -169,40 +174,19 @@ def get_bcrp_data(start_date: str, end_date: str, url: str):
     return pd.DataFrame(data)
 
 
-def get_unemployment_rate(start_date: str, end_date: str):
-    logging.info("Getting Unemployment Rate")
-    logging.info("========================")
-    unemployment_rate_df = get_bcrp_data(
-        start_date, end_date, URL_BASE_UNEMPLOYEMENT_RATE
-    )
-    logging.debug(unemployment_rate_df)
-    logging.info("Got Unemployment Rate")
-
-
-def get_ml_rate(rate_id, start_date, end_date):
-    start_date = (  # guarantee that first month exists
-        f"{start_date[:len(start_date) - 2]}01"
-    )
-
-    url = f"{URL_BASE_ML}{rate_id}/historicalData"
-    params = {
-        "dateStart": start_date,
-        "dateEnd": end_date,
-    }
-    headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (X11; CrOS x86_64 12871.102.0) AppleWebKit/537.36"
-            " (KHTML, like Gecko) Chrome/81.0.4044.141 Safari/537.36"
-        )
-    }
-    response = requests.get(url, params=params, headers=headers, verify=False)
-    jsonResponse = response.json()
-
+def format_values_per_month(data, start_date_str: str, index_value_name: str, index_date_name: str):
     last_days_dict = {}
     rates_dict = {}
-    for value in jsonResponse["chart"]:
-        date = pd.to_datetime(value["x"], utc=True, unit="ms")
-        rate = value["y"]
+
+    start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+
+    for value in data:
+        date = pd.to_datetime(value[index_date_name], utc=True, unit="ms")
+
+        if date.date() < start_date.date():
+            continue
+
+        rate = value[index_value_name]
         year_month = f"{date.year}-{date.month}"
         if year_month in last_days_dict:
             if date.day > last_days_dict[year_month]:
@@ -220,6 +204,40 @@ def get_ml_rate(rate_id, start_date, end_date):
         zip(date_list, rates_dict.values()), columns=["date", "rate"]
     )
     return df
+
+
+def get_unemployment_rate(start_date: str, end_date: str):
+    logging.info("Getting Unemployment Rate")
+    logging.info("========================")
+    unemployment_rate_df = get_bcrp_data(
+        start_date, end_date, URL_BASE_UNEMPLOYEMENT_RATE
+    )
+    logging.debug(unemployment_rate_df)
+    logging.info("Got Unemployment Rate")
+
+
+def get_month_1st(start_date: str):
+    start_date = (  # guarantee that first month exists
+        f"{start_date[:len(start_date) - 2]}01"
+    )
+    return start_date
+
+
+def get_ml_rate(rate_id: str, start_date: str, end_date: str):
+    start_date = get_month_1st(start_date)
+
+    url = f"{URL_BASE_ML}{rate_id}/historicalData"
+    params = {
+        "dateStart": start_date,
+        "dateEnd": end_date,
+    }
+    headers = {
+        "User-Agent": USER_AGENT
+    }
+    response = requests.get(url, params=params, headers=headers, verify=False)
+    jsonResponse = response.json()
+
+    return format_values_per_month(jsonResponse["chart"], start_date, "y", "x")
 
 
 def get_5years_treasury_bill_rate(start_date: str, end_date: str):
@@ -247,6 +265,28 @@ def get_djones_rate(start_date: str, end_date: str):
     df = get_ml_rate(rate_id, start_date, end_date)
     logging.debug(df)
     logging.info("Got Dow Jones Rates")
+
+
+def get_sp_bvl_general_index(start_date: str, end_date: str):
+    logging.info("Getting SP BVL General indexes")
+    logging.info("========================")
+
+    url = URL_SP_BVL
+    params = {
+        "indexId": "92026288",
+        "language_id": "2",
+        "_": end_date,
+    }
+    headers = {
+        "User-Agent": USER_AGENT
+    }
+    response = requests.get(url, params=params, headers=headers, verify=False)
+    jsonResponse = response.json()
+
+    start_date = get_month_1st(start_date)
+    df = format_values_per_month(jsonResponse["indexLevelsHolder"]["indexLevels"], start_date, "indexValue", "effectiveDate")
+    logging.debug(df)
+    logging.info("Got SP BVL General indexes")
 
 
 def get_raw_material_price(
@@ -400,10 +440,7 @@ def get_expected_pbi(year: int):
     logging.info("Getting Expected PBI")
     logging.info("========================")
     headers = {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            " (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36"
-        ),
+        "User-Agent": USER_AGENT,
         "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
     }
     file_content = requests.get(
@@ -456,6 +493,8 @@ def main():
     get_copper_price(2023, 2023)
     # KPI 21
     get_petroleum_wti_price(2023, 2023)
+    # KPI 23
+    get_sp_bvl_general_index("2022-06-30", "2023-07-31")
     # KPI 24
     get_djones_rate("2022-06-30", "2023-07-31")
 
