@@ -64,6 +64,9 @@ URL_EXPECTED_PBI = (
 URL_MONETARY_POLICIE_RATE = (
     f"{URL_BCRP_STATISTICS}/diarias/resultados/PD12301MD/html"
 )
+URL_PERUVIAN_GOVERMENT_BOND = (
+    f"{URL_BCRP_STATISTICS}/mensuales/resultados/PD31896MM/html"
+)
 
 
 def get_electricity(start_date: str, end_date: str):
@@ -484,6 +487,20 @@ def get_monetary_policie_rate(start_date: str, end_date: str):
     logging.info(monetary_policie_rate_df)
 
 
+def get_peruvian_goverment_bond(start_date: str, end_date: str):
+    logging.info("Getting 10 Years Peruvian Goverment Bond")
+    logging.info("========================")
+    peruvian_goverment_bond_df = get_bcrp_data(
+        start_date, end_date, URL_PERUVIAN_GOVERMENT_BOND
+    )
+    peruvian_goverment_bond_df = peruvian_goverment_bond_df[
+        peruvian_goverment_bond_df["Value"] != "n.d."
+    ]
+
+    logging.info(peruvian_goverment_bond_df)
+    logging.info("Got 10 Years Peruvian Goverment Bond")
+
+
 def main():
     # KPI 1
     get_electricity("2023-4", "2023-6")
@@ -508,6 +525,7 @@ def main():
     # KPI 14
     get_monetary_policie_rate("2023-07-01", "2023-07-31")
     # KPI 15
+    get_peruvian_goverment_bond("2023-1", "2023-7")
     # KPI 16
     get_5years_treasury_bill_rate("2022-06-30", "2023-07-31")
     # KPI 17
