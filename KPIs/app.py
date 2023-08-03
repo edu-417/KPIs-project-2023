@@ -1,7 +1,7 @@
 import io
 import logging
 import zipfile
-from datetime import datetime
+import datetime
 
 import coloredlogs
 import numpy as np
@@ -188,7 +188,7 @@ def format_values_per_month(
     last_days_dict = {}
     rates_dict = {}
 
-    start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+    start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d")
 
     for value in data:
         date = pd.to_datetime(value[index_date_name], utc=True, unit="ms")
@@ -511,21 +511,29 @@ def get_sbs_usd_exchange_rate(date: str):
         data['ctl00$MainScriptManager'] = 'ctl00$cphContent$updConsulta|ctl00$cphContent$btnConsultar'
         data['ctl00$cphContent$btnConsultar'] = 'Consultar'
 
-        date_time = datetime.strptime(date, '%Y-%m-%d')
-        date_time_str = date_time.strftime('%Y-%m-%d-%H-%M-%S')
-        date_str = date_time.strftime('%d/%m/%Y')
-        now_str = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+        date_time = datetime.datetime.strptime(date, '%Y-%m-%d')
+        value = 0
+        for i in range(31):
+            date_time_str = date_time.strftime('%Y-%m-%d-%H-%M-%S')
+            date_str = date_time.strftime('%d/%m/%Y')
+            now_str = datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
 
-        data['ctl00$cphContent$rdpDate'] = date
-        data['ctl00$cphContent$rdpDate$dateInput'] =  date_str
-        data['ctl00_cphContent_rdpDate_dateInput_ClientState'] = f'{{"enabled":true,"emptyMessage":"","validationText":"{date_time_str}","valueAsString":"{date_time_str}","minDateStr":"1000-01-01-00-00-00","maxDateStr":"{now_str}","lastSetTextBoxValue":"{date_str}"}}'
+            data['ctl00$cphContent$rdpDate'] = date
+            data['ctl00$cphContent$rdpDate$dateInput'] =  date_str
+            data['ctl00_cphContent_rdpDate_dateInput_ClientState'] = f'{{"enabled":true,"emptyMessage":"","validationText":"{date_time_str}","valueAsString":"{date_time_str}","minDateStr":"1000-01-01-00-00-00","maxDateStr":"{now_str}","lastSetTextBoxValue":"{date_str}"}}'
 
-        p = s.post(URL_SBS_TC, data=data, headers=headers)
-        soup = BeautifulSoup(p.content, "html.parser")
-        values = soup.css.select(
-            "#ctl00_cphContent_rgTipoCambio_ctl00__0 > td:nth-child(3)")  # soup.css.select("#tbodyGrid > tr > td > .sname")
-        value = values[0].getText()
-        logging.debug(value)
+            p = s.post(URL_SBS_TC, data=data, headers=headers)
+            soup = BeautifulSoup(p.content, "html.parser")
+            values = soup.css.select(
+                "#ctl00_cphContent_rgTipoCambio_ctl00__0 > td:nth-child(3)")
+            if len(values) > 0 and values[0].getText().strip() != "":
+                value = values[0].getText().strip()
+                break
+
+            date_time -= datetime.timedelta(days=1)
+
+        logging.info(value)
+        logging.info(date_time.strftime('%Y-%m-%d'))
 
 
 def main():
@@ -568,7 +576,7 @@ def main():
     # KPI 24
     get_djones_rate("2022-06-30", "2023-07-31")
     # KPI 29
-    get_sbs_usd_exchange_rate("2023-06-20")
+    get_sbs_usd_exchange_rate("2023-06-29")
 
 
 if __name__ == "__main__":
