@@ -538,12 +538,13 @@ def get_sbs_usd_exchange_rate(date: str):
             data["ctl00$cphContent$rdpDate$dateInput"] = date_str
             data["ctl00_cphContent_rdpDate_dateInput_ClientState"] = f"""
                 {{
-                    "enabled":true, "emptyMessage":"",
-                    "validationText":"{date_time_str}",
-                    "valueAsString":"{date_time_str}",
-                    "minDateStr":"1000-01-01-00-00-00",
-                    "maxDateStr":"{now_str}",
-                    "lastSetTextBoxValue":"{date_str}"
+                    "enabled": true,
+                    "emptyMessage": "",
+                    "validationText": "{date_time_str}",
+                    "valueAsString": "{date_time_str}",
+                    "minDateStr": "1000-01-01-00-00-00",
+                    "maxDateStr": "{now_str}",
+                    "lastSetTextBoxValue": "{date_str}"
                 }}
                 """
 
