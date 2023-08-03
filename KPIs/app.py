@@ -187,7 +187,6 @@ def format_values_per_month(
 ):
     last_days_dict = {}
     rates_dict = {}
-
     start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d")
 
     for value in data:
@@ -227,14 +226,20 @@ def get_unemployment_rate(start_date: str, end_date: str):
 
 
 def get_month_1st(start_date: str):
-    start_date = (  # guarantee that first month exists
-        f"{start_date[:len(start_date) - 2]}01"
-    )
-    return start_date
+    return f"{start_date}-01"
+
+
+def get_month_last(start_date: str):
+    date_time = datetime.date(int(start_date[0:4]), int(start_date[5:7]) + 1, 1) - datetime.timedelta(days=1)
+    current_time = datetime.datetime.now().date()
+    if current_time < date_time:
+        date_time = current_time
+    return date_time.strftime('%Y-%m-%d')
 
 
 def get_ml_rate(rate_id: str, start_date: str, end_date: str):
     start_date = get_month_1st(start_date)
+    end_date = get_month_last(end_date)
 
     url = f"{URL_BASE_ML}{rate_id}/historicalData"
     params = {
@@ -271,13 +276,16 @@ def get_djones_rate(start_date: str, end_date: str):
     logging.info("========================")
     rate_id = "SU5ELkRPV0pPTkVTLklORkJPTA"
     df = get_ml_rate(rate_id, start_date, end_date)
-    logging.debug(df)
+    logging.info(df)
     logging.info("Got Dow Jones Rates")
 
 
 def get_sp_bvl_general_index(start_date: str, end_date: str):
     logging.info("Getting SP BVL General indexes")
     logging.info("========================")
+
+    start_date = get_month_1st(start_date)
+    end_date = get_month_last(end_date)
 
     url = URL_SP_BVL
     params = {
@@ -289,10 +297,9 @@ def get_sp_bvl_general_index(start_date: str, end_date: str):
     response = requests.get(url, params=params, headers=headers, verify=False)
     jsonResponse = response.json()
 
-    start_date = get_month_1st(start_date)
     df = format_values_per_month(jsonResponse["indexLevelsHolder"]["indexLevels"], start_date, "indexValue",
                                  "effectiveDate")
-    logging.debug(df)
+    logging.info(df)
     logging.info("Got SP BVL General indexes")
 
 
@@ -496,6 +503,8 @@ def get_peruvian_goverment_bond(start_date: str, end_date: str):
 
 
 def get_sbs_usd_exchange_rate(date: str):
+    logging.info("Getting SBS USD Exchange Rate")
+    logging.info("========================")
     headers = {
         'user-agent': USER_AGENT
     }
@@ -532,8 +541,9 @@ def get_sbs_usd_exchange_rate(date: str):
 
             date_time -= datetime.timedelta(days=1)
 
-        logging.info(value)
-        logging.info(date_time.strftime('%Y-%m-%d'))
+        logging.debug(value)
+        logging.debug(date_time.strftime('%Y-%m-%d'))
+        logging.info("Got SBS USD Exchange Rate")
 
 
 def main():
@@ -562,9 +572,9 @@ def main():
     # KPI 15
     get_peruvian_goverment_bond("2023-1", "2023-7")
     # KPI 16
-    get_5years_treasury_bill_rate("2022-06-30", "2023-07-31")
+    get_5years_treasury_bill_rate("2022-06", "2023-07")
     # KPI 17
-    get_10years_treasury_bill_rate("2022-06-30", "2023-07-31")
+    get_10years_treasury_bill_rate("2022-06", "2023-07")
     # KPI 18-19
     get_price_index("Abril", 2023)
     # KPI 20
@@ -572,9 +582,9 @@ def main():
     # KPI 21
     get_petroleum_wti_price(2023, 2023)
     # KPI 23
-    get_sp_bvl_general_index("2022-06-30", "2023-07-31")
+    get_sp_bvl_general_index("2022-06", "2023-07")
     # KPI 24
-    get_djones_rate("2022-06-30", "2023-07-31")
+    get_djones_rate("2022-06", "2023-08")
     # KPI 29
     get_sbs_usd_exchange_rate("2023-06-29")
 
