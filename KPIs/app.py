@@ -420,18 +420,45 @@ def get_dolar_exchange(year: int, month: str, currency_code: str, param: str):
     response = requests.post(URL_DOLAR_EXCHANGE, params=params, data=data)
     soup = BeautifulSoup(response.text, "html.parser")
 
+    MONTH_INDEX = {
+        "Enero": 1,
+        "Febrero": 2,
+        "Marzo": 3,
+        "Abril": 4,
+        "Mayo": 5,
+        "Junio": 6,
+        "Julio": 7,
+        "Agosto": 8,
+        "Septiembre": 9,
+        "Octubre": 10,
+        "Noviembre": 11,
+        "Diciembre": 12,
+    }
+
+    month_index = MONTH_INDEX[month]
+    days = pd.date_range(
+        f"{year}-{month_index:02d}-01",
+        f"{year}-{(month_index + 1):02d}-01",
+        inclusive="left",
+    )
+
     values = []
-    for day in range(1, 31):
+
+    for day in range(1, days.shape[0] + 1):
         id = f"gr_ctl{(day + 1):02d}_{month}"
         value_td = soup.find(id=id)
         values.append(value_td.getText().strip())
-    data = {"Day": np.arange(1, 31), "Value": values}
+
+    logging.debug(values)
+    data = {"Day": days, "Value": values}
 
     df = pd.DataFrame(data)
     df.replace("", np.nan, inplace=True)
     df.dropna(inplace=True)
     df["Value"] = df["Value"].str.replace(",", "")
     df["Value"] = df["Value"].astype(float)
+
+    df["Day"] = df["Day"].dt.strftime("%Y-%m-%d")
 
     df.set_index("Day", inplace=True)
 
