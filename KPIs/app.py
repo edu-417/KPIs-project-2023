@@ -582,47 +582,121 @@ def get_sbs_usd_exchange_rate(date: str):
         logging.info("Got SBS USD Exchange Rate")
 
 
+def read_parameters(file_path: str, sheet_name: str):
+    parameters_df = pd.read_excel(
+        file_path,
+        sheet_name=sheet_name,
+        skiprows=2,
+        usecols=["N°", "Titulo KPI", "Inicio", "Fin"],
+    )
+
+    kpi_map = {
+        1: {
+            "function": get_electricity,
+            "format": "%Y-%m",
+            "sheet_name_output": "Electricity (GWH)",
+        },
+        3: {
+            "function": get_dolar_exchange_rate,
+            "format": "%Y-%m-%d",
+            "sheet_name_output": "Dolar Exchange Rate",
+        },
+        4: {
+            "function": get_euro_exchange_rate,
+            "format": "%Y-%m-%d",
+            "sheet_name_output": "Euro Exchange Rate",
+        },
+        12: {
+            "function": get_intern_demand,
+            "sheet_name_output": "Intern Demand",
+        },
+        13: {
+            "function": get_unemployment_rate,
+            "format": "%Y-%m",
+            "sheet_name_output": "Unemployment Rate",
+        },
+        14: {
+            "function": get_monetary_policie_rate,
+            "format": "%Y-%m-%d",
+            "sheet_name_output": "Monetary Policy Rate",
+        },
+        15: {
+            "function": get_peruvian_goverment_bond,
+            "format": "%Y-%m",
+            "sheet_name_output": "10 Years Peruvian Goverment Bond",
+        },
+    }
+
+    parameters_df = parameters_df[parameters_df["N°"].isin(kpi_map.keys())]
+
+    def transform(row):
+        format = kpi_map[row["N°"]].get("format")
+        if format:
+            row["Inicio"] = row["Inicio"].strftime(format)
+            row["Fin"] = row["Fin"].strftime(format)
+
+        return row
+
+    def execute(row):
+        function = kpi_map[row["N°"]].get("function")
+        sheet_name = kpi_map[row["N°"]].get("sheet_name_output")
+        if function:
+            df = function(row["Inicio"], row["Fin"])
+            try:
+                with pd.ExcelWriter("output.xlsx", mode="a") as writer:
+                    df.to_excel(writer, sheet_name=sheet_name)
+            except Exception as e:
+                print(f"error: {e}")
+                with pd.ExcelWriter("output.xlsx", mode="w") as writer:
+                    df.to_excel(writer, sheet_name=sheet_name)
+
+    parameters_df = parameters_df.apply(lambda row: transform(row), axis=1)
+    parameters_df.apply(lambda row: execute(row), axis=1)
+    logging.debug(parameters_df)
+
+
 def main():
-    # KPI 1
-    get_electricity("2023-04", "2023-06")
-    # KPI 2
-    get_vehicular_flow("2023")
-    # KPI 3
-    get_dolar_exchange_rate("2023-06-20", "2023-06-30")
-    # KPI 4
-    get_euro_exchange_rate("2023-06-20", "2023-06-30")
-    # KPI 5
-    get_yen_dolar_exchange(2023, "Julio")
-    # KPI 6
-    get_brazilian_real_dolar_exchange(2023, "Julio")
-    # KPI 9
-    get_pbi("2023-04", "2023-07")
-    # KPI 10
-    get_expected_pbi(2023)
-    # KPI 12
-    get_intern_demand("2023-1", "2023-4")
-    # KPI 13
-    get_unemployment_rate("2023-01", "2023-06")
-    # KPI 14
-    get_monetary_policie_rate("2023-07-01", "2023-07-31")
-    # KPI 15
-    get_peruvian_goverment_bond("2023-01", "2023-07")
-    # KPI 16
-    get_5years_treasury_bill_rate("2022-06", "2023-07")
-    # KPI 17
-    get_10years_treasury_bill_rate("2022-06", "2023-07")
-    # KPI 18-19
-    get_price_index(2023, "Abril")
-    # KPI 20
-    get_copper_price(2023, 2023)
-    # KPI 21
-    get_petroleum_wti_price(2023, 2023)
-    # KPI 23
-    get_sp_bvl_general_index("2022-06", "2023-07")
-    # KPI 24
-    get_djones_rate("2022-06", "2023-08")
-    # KPI 29
-    get_sbs_usd_exchange_rate("2023-06-29")
+    read_parameters("input.xlsx", "Parametros")
+    # # KPI 1
+    # get_electricity("2023-04", "2023-06")
+    # # KPI 2
+    # get_vehicular_flow("2023")
+    # # KPI 3
+    # get_dolar_exchange_rate("2023-06-20", "2023-06-30")
+    # # KPI 4
+    # get_euro_exchange_rate("2023-06-20", "2023-06-30")
+    # # KPI 5
+    # get_yen_dolar_exchange(2023, "Julio")
+    # # KPI 6
+    # get_brazilian_real_dolar_exchange(2023, "Julio")
+    # # KPI 9
+    # get_pbi("2023-04", "2023-07")
+    # # KPI 10
+    # get_expected_pbi(2023)
+    # # KPI 12
+    # get_intern_demand("2023-1", "2023-4")
+    # # KPI 13
+    # get_unemployment_rate("2023-01", "2023-06")
+    # # KPI 14
+    # get_monetary_policie_rate("2023-07-01", "2023-07-31")
+    # # KPI 15
+    # get_peruvian_goverment_bond("2023-01", "2023-07")
+    # # KPI 16
+    # get_5years_treasury_bill_rate("2022-06", "2023-07")
+    # # KPI 17
+    # get_10years_treasury_bill_rate("2022-06", "2023-07")
+    # # KPI 18-19
+    # get_price_index(2023, "Abril")
+    # # KPI 20
+    # get_copper_price(2023, 2023)
+    # # KPI 21
+    # get_petroleum_wti_price(2023, 2023)
+    # # KPI 23
+    # get_sp_bvl_general_index("2022-06", "2023-07")
+    # # KPI 24
+    # get_djones_rate("2022-06", "2023-08")
+    # # KPI 29
+    # get_sbs_usd_exchange_rate("2023-06-29")
 
 
 if __name__ == "__main__":
