@@ -36,12 +36,8 @@ URL_PBI = (
     "https://www.inei.gob.pe/media/principales_indicadores/CalculoPBI_120.zip"
 )
 URL_BASE_INEI = "https://www.inei.gob.pe"
-URL_BASE_INTERN_DEMAND = (
-    f"{URL_BCRP_STATISTICS}/trimestrales/resultados/PN02529AQ/html"
-)
-URL_BASE_UNEMPLOYEMENT_RATE = (
-    f"{URL_BCRP_STATISTICS}/mensuales/resultados/PN38063GM/html"
-)
+URL_BASE_INTERN_DEMAND = f"{URL_BCRP_STATISTICS}/api/PN02529AQ/json"
+URL_BASE_UNEMPLOYEMENT_RATE = f"{URL_BCRP_STATISTICS}/api/PN38063GM/json"
 URL_BASE_TOLL = f"{URL_BASE_INEI}/biblioteca-virtual/boletines/flujo-vehicular"
 URL_INDEX_PRICE = (
     f"{URL_BASE_INEI}/media/MenuRecursivo/indices_tematicos/"
@@ -51,24 +47,16 @@ URL_RAW_MATERIAL_PRICE = (
     f"{URL_BASE_BCENTRAL_CHILE}/Siete/ES/Siete/Cuadro/CAP_EI/MN_EI11/"
     "EI_PROD_BAS/637185066927145616"
 )
-URL_DOLAR_EXCHANGE_RATE = (
-    f"{URL_BCRP_STATISTICS}/diarias/resultados/PD04638PD/html"
-)
-URL_EURO_EXCHANGE_RATE = (
-    f"{URL_BCRP_STATISTICS}/diarias/resultados/PD04648PD/html"
-)
+URL_DOLAR_EXCHANGE_RATE = f"{URL_BCRP_STATISTICS}/api/PD04638PD/json"
+URL_EURO_EXCHANGE_RATE = f"{URL_BCRP_STATISTICS}/api/PD04648PD/json"
 URL_DOLAR_EXCHANGE = (
     f"{URL_BASE_BCENTRAL_CHILE}/Indicadoressiete/secure/Serie.aspx"
 )
 URL_EXPECTED_PBI = (
     f"{URL_BCRP_DOCS}/Estadisticas/Encuestas/expectativas-pbi.xlsx"
 )
-URL_MONETARY_POLICIE_RATE = (
-    f"{URL_BCRP_STATISTICS}/diarias/resultados/PD12301MD/html"
-)
-URL_PERUVIAN_GOVERMENT_BOND = (
-    f"{URL_BCRP_STATISTICS}/mensuales/resultados/PD31896MM/html"
-)
+URL_MONETARY_POLICIE_RATE = f"{URL_BCRP_STATISTICS}/api/PD12301MD/json"
+URL_PERUVIAN_GOVERMENT_BOND = f"{URL_BCRP_STATISTICS}/api/PD31896MM/json"
 
 
 def get_electricity(start_date: str, end_date: str):
@@ -383,7 +371,7 @@ def get_dolar_exchange_rate(start_date: str, end_date: str):
         start_date, end_date, URL_DOLAR_EXCHANGE_RATE
     )
     dolar_exchange_rate_df = dolar_exchange_rate_df[
-        dolar_exchange_rate_df["Value"] != "n.d."
+        dolar_exchange_rate_df["value"] != "n.d."
     ]
     logging.debug(dolar_exchange_rate_df)
     logging.info("Got Dolar Exchange")
@@ -396,7 +384,7 @@ def get_euro_exchange_rate(start_date: str, end_date: str):
         start_date, end_date, URL_EURO_EXCHANGE_RATE
     )
     euro_exchange_rate_df = euro_exchange_rate_df[
-        euro_exchange_rate_df["Value"] != "n.d."
+        euro_exchange_rate_df["value"] != "n.d."
     ]
     logging.debug(euro_exchange_rate_df)
     logging.info("Got Euro Exchange")
@@ -490,15 +478,18 @@ def get_expected_pbi(year: int):
 
 
 def get_monetary_policie_rate(start_date: str, end_date: str):
+    logging.info("Getting Monetary Policie Rate")
+    logging.info("========================")
     monetary_policie_rate_df = get_bcrp_data(
         start_date, end_date, URL_MONETARY_POLICIE_RATE
     )
 
     monetary_policie_rate_df = monetary_policie_rate_df[
-        monetary_policie_rate_df["Value"] != "n.d."
+        monetary_policie_rate_df["value"] != "n.d."
     ]
 
-    logging.info(monetary_policie_rate_df)
+    logging.debug(monetary_policie_rate_df)
+    logging.info("Got Monetary Policie Rate")
 
 
 def get_peruvian_goverment_bond(start_date: str, end_date: str):
@@ -508,10 +499,10 @@ def get_peruvian_goverment_bond(start_date: str, end_date: str):
         start_date, end_date, URL_PERUVIAN_GOVERMENT_BOND
     )
     peruvian_goverment_bond_df = peruvian_goverment_bond_df[
-        peruvian_goverment_bond_df["Value"] != "n.d."
+        peruvian_goverment_bond_df["value"] != "n.d."
     ]
 
-    logging.info(peruvian_goverment_bond_df)
+    logging.debug(peruvian_goverment_bond_df)
     logging.info("Got 10 Years Peruvian Goverment Bond")
 
 
