@@ -162,7 +162,7 @@ def get_intern_demand(start_date: str, end_date: str):
     logging.info("Got intern demand")
 
 
-def get_price_index(month: str, year: int):
+def get_price_index(year: int, month: str):
     logging.info("Getting Price Index")
     logging.info("========================")
     file_content = requests.get(URL_INDEX_PRICE, verify=False).content
@@ -605,7 +605,7 @@ def main():
     # KPI 17
     get_10years_treasury_bill_rate("2022-06", "2023-07")
     # KPI 18-19
-    get_price_index("Abril", 2023)
+    get_price_index(2023, "Abril")
     # KPI 20
     get_copper_price(2023, 2023)
     # KPI 21
