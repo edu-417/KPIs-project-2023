@@ -173,6 +173,7 @@ def get_bcrp_data(start_date: str, end_date: str, url: str):
 
     df = pd.DataFrame(data)
     df.columns = ["period", "value"]
+    df.set_index("period", inplace=True)
 
     return df.explode("value")
 
@@ -569,7 +570,7 @@ def get_sbs_usd_exchange_rate(date: str):
 
 def main():
     # KPI 1
-    get_electricity("2023-4", "2023-6")
+    get_electricity("2023-04", "2023-06")
     # KPI 2
     get_vehicular_flow("2023")
     # KPI 3
@@ -587,11 +588,11 @@ def main():
     # KPI 12
     get_intern_demand("2023-1", "2023-4")
     # KPI 13
-    get_unemployment_rate("2023-1", "2023-6")
+    get_unemployment_rate("2023-01", "2023-06")
     # KPI 14
     get_monetary_policie_rate("2023-07-01", "2023-07-31")
     # KPI 15
-    get_peruvian_goverment_bond("2023-1", "2023-7")
+    get_peruvian_goverment_bond("2023-01", "2023-07")
     # KPI 16
     get_5years_treasury_bill_rate("2022-06", "2023-07")
     # KPI 17
