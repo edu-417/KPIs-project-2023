@@ -236,11 +236,13 @@ def get_month_1st(start_date: str):
 
 
 def get_month_last(start_date: str):
-    date_time = datetime.date(int(start_date[0:4]), int(start_date[5:7]) + 1, 1) - datetime.timedelta(days=1)
+    date_time = datetime.date(
+        int(start_date[0:4]), int(start_date[5:7]) + 1, 1
+    ) - datetime.timedelta(days=1)
     current_time = datetime.datetime.now().date()
     if current_time < date_time:
         date_time = current_time
-    return date_time.strftime('%Y-%m-%d')
+    return date_time.strftime("%Y-%m-%d")
 
 
 def get_ml_rate(rate_id: str, start_date: str, end_date: str):
@@ -303,8 +305,12 @@ def get_sp_bvl_general_index(start_date: str, end_date: str):
     response = requests.get(url, params=params, headers=headers, verify=False)
     jsonResponse = response.json()
 
-    df = format_values_per_month(jsonResponse["indexLevelsHolder"]["indexLevels"], start_date, "indexValue",
-                                 "effectiveDate")
+    df = format_values_per_month(
+        jsonResponse["indexLevelsHolder"]["indexLevels"],
+        start_date,
+        "indexValue",
+        "effectiveDate",
+    )
     logging.info(df)
     logging.info("Got SP BVL General indexes")
 
@@ -511,9 +517,7 @@ def get_peruvian_goverment_bond(start_date: str, end_date: str):
 def get_sbs_usd_exchange_rate(date: str):
     logging.info("Getting SBS USD Exchange Rate")
     logging.info("========================")
-    headers = {
-        'user-agent': USER_AGENT
-    }
+    headers = {"user-agent": USER_AGENT}
 
     with requests.Session() as s:
         r = s.get(URL_SBS_TC, headers=headers)
@@ -567,7 +571,7 @@ def get_sbs_usd_exchange_rate(date: str):
             date_time -= datetime.timedelta(days=1)
 
         logging.debug(value)
-        logging.debug(date_time.strftime('%Y-%m-%d'))
+        logging.debug(date_time.strftime("%Y-%m-%d"))
         logging.info("Got SBS USD Exchange Rate")
 
 
