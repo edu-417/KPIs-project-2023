@@ -22,9 +22,7 @@ URL_BASE_BCRP = "https://www.bcrp.gob.pe"
 URL_BCRP_STATISTICS = "https://estadisticas.bcrp.gob.pe/estadisticas/series"
 URL_BCRP_DOCS = f"{URL_BASE_BCRP}/docs"
 URL_BASE_BCENTRAL_CHILE = "https://si3.bcentral.cl"
-URL_BASE_ELECTRICITY = (
-    f"{URL_BCRP_STATISTICS}/mensuales/resultados/PD37966AM/html"
-)
+URL_BASE_ELECTRICITY = f"{URL_BCRP_STATISTICS}/api/PD37966AM/json"
 URL_BASE_ML = "https://mlback.btgpactual.cl/instruments/"
 URL_SP_BVL = (
     "https://www.spglobal.com/spdji/es/util/redesign/index-data/"
@@ -180,17 +178,15 @@ def get_price_index(year: int, month: str):
 
 def get_bcrp_data(start_date: str, end_date: str, url: str):
     response = requests.get(f"{url}/{start_date}/{end_date}")
-    soup = BeautifulSoup(response.text, "html.parser")
+    logging.debug(f"response: {response.json()}")
+    json_response = response.json()
 
-    periods_td = soup.find_all("td", class_="periodo")
-    values_td = soup.find_all("td", class_="dato")
+    data = json_response["periods"]
 
-    periods = [period_td.getText().strip() for period_td in periods_td]
-    values = [value_td.getText().strip() for value_td in values_td]
+    df = pd.DataFrame(data)
+    df.columns = ["period", "value"]
 
-    data = {"Period": periods, "Value": values}
-
-    return pd.DataFrame(data)
+    return df.explode("value")
 
 
 def format_values_per_month(
