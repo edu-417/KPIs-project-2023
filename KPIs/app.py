@@ -59,12 +59,14 @@ URL_MONETARY_POLICIE_RATE = f"{URL_BCRP_STATISTICS}/api/PD12301MD/json"
 URL_PERUVIAN_GOVERMENT_BOND = f"{URL_BCRP_STATISTICS}/api/PD31896MM/json"
 
 
-def get_electricity(start_date: str, end_date: str):
+def get_electricity(start_date: str, end_date: str) -> pd.DataFrame:
     logging.info("Getting Electricity(GWH)")
     logging.info("========================")
     electricity_df = get_bcrp_data(start_date, end_date, URL_BASE_ELECTRICITY)
     logging.debug(electricity_df)
     logging.info("Got Electricity")
+
+    return electricity_df
 
 
 def get_vehicular_flow(year: str):
@@ -143,7 +145,7 @@ def get_pbi(start_date: str, end_date: str):
             logging.info("Got PBI")
 
 
-def get_intern_demand(start_date: str, end_date: str):
+def get_intern_demand(start_date: str, end_date: str) -> pd.DataFrame:
     logging.info("Getting Intern Demand")
     logging.info("========================")
     intern_demand_df = get_bcrp_data(
@@ -151,6 +153,8 @@ def get_intern_demand(start_date: str, end_date: str):
     )
     logging.debug(intern_demand_df)
     logging.info("Got intern demand")
+
+    return intern_demand_df
 
 
 def get_price_index(year: int, month: str):
@@ -164,7 +168,7 @@ def get_price_index(year: int, month: str):
     logging.info("Got Price Index")
 
 
-def get_bcrp_data(start_date: str, end_date: str, url: str):
+def get_bcrp_data(start_date: str, end_date: str, url: str) -> pd.DataFrame:
     response = requests.get(f"{url}/{start_date}/{end_date}")
     logging.debug(f"response: {response.json()}")
     json_response = response.json()
@@ -211,7 +215,7 @@ def format_values_per_month(
     return df
 
 
-def get_unemployment_rate(start_date: str, end_date: str):
+def get_unemployment_rate(start_date: str, end_date: str) -> pd.DataFrame:
     logging.info("Getting Unemployment Rate")
     logging.info("========================")
     unemployment_rate_df = get_bcrp_data(
@@ -219,6 +223,8 @@ def get_unemployment_rate(start_date: str, end_date: str):
     )
     logging.debug(unemployment_rate_df)
     logging.info("Got Unemployment Rate")
+
+    return unemployment_rate_df
 
 
 def get_month_1st(start_date: str):
@@ -365,7 +371,7 @@ def get_petroleum_wti_price(
     logging.info("Got Petroleum WTI Price")
 
 
-def get_dolar_exchange_rate(start_date: str, end_date: str):
+def get_dolar_exchange_rate(start_date: str, end_date: str) -> pd.DataFrame:
     logging.info("Getting Dolar Exchange")
     logging.info("========================")
     dolar_exchange_rate_df = get_bcrp_data(
@@ -377,8 +383,10 @@ def get_dolar_exchange_rate(start_date: str, end_date: str):
     logging.debug(dolar_exchange_rate_df)
     logging.info("Got Dolar Exchange")
 
+    return dolar_exchange_rate_df
 
-def get_euro_exchange_rate(start_date: str, end_date: str):
+
+def get_euro_exchange_rate(start_date: str, end_date: str) -> pd.DataFrame:
     logging.info("Getting Euro Exchange")
     logging.info("========================")
     euro_exchange_rate_df = get_bcrp_data(
@@ -389,6 +397,8 @@ def get_euro_exchange_rate(start_date: str, end_date: str):
     ]
     logging.debug(euro_exchange_rate_df)
     logging.info("Got Euro Exchange")
+
+    return euro_exchange_rate_df
 
 
 def get_dolar_exchange(year: int, month: str, currency_code: str, param: str):
@@ -478,7 +488,7 @@ def get_expected_pbi(year: int):
     logging.info("Got Expected PBI")
 
 
-def get_monetary_policie_rate(start_date: str, end_date: str):
+def get_monetary_policie_rate(start_date: str, end_date: str) -> pd.DataFrame:
     logging.info("Getting Monetary Policie Rate")
     logging.info("========================")
     monetary_policie_rate_df = get_bcrp_data(
@@ -492,8 +502,10 @@ def get_monetary_policie_rate(start_date: str, end_date: str):
     logging.debug(monetary_policie_rate_df)
     logging.info("Got Monetary Policie Rate")
 
+    return monetary_policie_rate_df
 
-def get_peruvian_goverment_bond(start_date: str, end_date: str):
+
+def get_peruvian_goverment_bond(start_date: str, end_date: str) -> pd.DataFrame:
     logging.info("Getting 10 Years Peruvian Goverment Bond")
     logging.info("========================")
     peruvian_goverment_bond_df = get_bcrp_data(
@@ -505,6 +517,8 @@ def get_peruvian_goverment_bond(start_date: str, end_date: str):
 
     logging.debug(peruvian_goverment_bond_df)
     logging.info("Got 10 Years Peruvian Goverment Bond")
+
+    return peruvian_goverment_bond_df
 
 
 def get_sbs_usd_exchange_rate(date: str):
