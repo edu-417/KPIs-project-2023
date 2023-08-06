@@ -182,10 +182,10 @@ def get_bcrp_data(start_date: str, end_date: str, url: str) -> pd.DataFrame:
     data = json_response["periods"]
 
     df = pd.DataFrame(data)
-    df.columns = ["period", "value"]
-    df.set_index("period", inplace=True)
+    df.columns = ["Period", "Value"]
+    df.set_index("Period", inplace=True)
 
-    return df.explode("value")
+    return df.explode("Value")
 
 
 def format_values_per_month(
@@ -389,7 +389,7 @@ def get_dolar_exchange_rate(start_date: str, end_date: str) -> pd.DataFrame:
         start_date, end_date, URL_DOLAR_EXCHANGE_RATE
     )
     dolar_exchange_rate_df = dolar_exchange_rate_df[
-        dolar_exchange_rate_df["value"] != "n.d."
+        dolar_exchange_rate_df["Value"] != "n.d."
     ]
     logging.debug(dolar_exchange_rate_df)
     logging.info("Got Dolar Exchange")
@@ -404,7 +404,7 @@ def get_euro_exchange_rate(start_date: str, end_date: str) -> pd.DataFrame:
         start_date, end_date, URL_EURO_EXCHANGE_RATE
     )
     euro_exchange_rate_df = euro_exchange_rate_df[
-        euro_exchange_rate_df["value"] != "n.d."
+        euro_exchange_rate_df["Value"] != "n.d."
     ]
     logging.debug(euro_exchange_rate_df)
     logging.info("Got Euro Exchange")
@@ -432,6 +432,8 @@ def get_dolar_exchange(year: int, month: str, currency_code: str, param: str):
     df.dropna(inplace=True)
     df["Value"] = df["Value"].str.replace(",", "")
     df["Value"] = df["Value"].astype(float)
+
+    df.set_index("Day", inplace=True)
 
     return df
 
@@ -518,7 +520,7 @@ def get_monetary_policie_rate(start_date: str, end_date: str) -> pd.DataFrame:
     )
 
     monetary_policie_rate_df = monetary_policie_rate_df[
-        monetary_policie_rate_df["value"] != "n.d."
+        monetary_policie_rate_df["Value"] != "n.d."
     ]
 
     logging.debug(monetary_policie_rate_df)
@@ -534,7 +536,7 @@ def get_peruvian_goverment_bond(start_date: str, end_date: str) -> pd.DataFrame:
         start_date, end_date, URL_PERUVIAN_GOVERMENT_BOND
     )
     peruvian_goverment_bond_df = peruvian_goverment_bond_df[
-        peruvian_goverment_bond_df["value"] != "n.d."
+        peruvian_goverment_bond_df["Value"] != "n.d."
     ]
 
     logging.debug(peruvian_goverment_bond_df)
