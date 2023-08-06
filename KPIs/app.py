@@ -129,7 +129,7 @@ def get_vehicular_flow(year: str):
         logging.info("Got Vehicular Flow")
 
 
-def get_pbi(date: str):
+def get_pbi(start_date: str, end_date: str):
     logging.info("Getting PBI")
     logging.info("========================")
     file_content = requests.get(URL_PBI, verify=False).content
@@ -146,9 +146,14 @@ def get_pbi(date: str):
         with archive.open(pbi_file_name) as file:
             df = pd.read_excel(file, usecols="A:B", skiprows=3)
             df = df.dropna()
-            df["Año y Mes"] = df["Año y Mes"].astype("str")
-
-            logging.debug(df[df["Año y Mes"] == date])
+            df["Año y Mes"] = pd.to_datetime(df["Año y Mes"], format="%Y%m")
+            df.set_index("Año y Mes", inplace=True)
+            df = df.loc[start_date:end_date]
+            df.reset_index(inplace=True)
+            df["Año y Mes"] = df["Año y Mes"].dt.strftime("%Y-%m")
+            df.set_index("Año y Mes", inplace=True)
+            df.to_excel("out.xlsx", "PBI")
+            logging.debug(df)
             logging.info("Got PBI")
 
 
@@ -589,7 +594,7 @@ def main():
     # KPI 6
     get_brazilian_real_dolar_exchange(2023, "Julio")
     # KPI 9
-    get_pbi("202304")
+    get_pbi("2023-04", "2023-07")
     # KPI 10
     get_expected_pbi(2023)
     # KPI 12
