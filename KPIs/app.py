@@ -160,15 +160,18 @@ def get_intern_demand(start_date: str, end_date: str) -> pd.DataFrame:
     return intern_demand_df
 
 
-def get_price_index(year: int, month: str):
+def get_price_index(year: int, month: str) -> pd.DataFrame:
     logging.info("Getting Price Index")
     logging.info("========================")
     file_content = requests.get(URL_INDEX_PRICE, verify=False).content
     df = pd.read_excel(io.BytesIO(file_content), skiprows=3)
     df = df.fillna(method="ffill")
-    # print(df.tail(20))
-    logging.debug(df[(df["Año"] == year) & (df["Mes"] == month)])
+    df["Año"] = df["Año"].astype(int)
+    df = df[(df["Año"] == int(year)) & (df["Mes"] == month)]
+    logging.debug(df)
     logging.info("Got Price Index")
+
+    return df
 
 
 def get_bcrp_data(start_date: str, end_date: str, url: str) -> pd.DataFrame:
@@ -643,6 +646,10 @@ def read_parameters(file_path: str, sheet_name: str):
             "function": get_peruvian_goverment_bond,
             "format": "%Y-%m",
             "sheet_name_output": "10 Years Peruvian Goverment Bond",
+        },
+        18: {
+            "function": get_price_index,
+            "sheet_name_output": "Price Index",
         },
     }
 
