@@ -425,7 +425,7 @@ def get_dolar_exchange(year: int, month: str, currency_code: str, param: str):
     return df
 
 
-def get_yen_dolar_exchange(year: int, month: str):
+def get_yen_dolar_exchange(year: int, month: str) -> pd.DataFrame:
     logging.info("Getting YEN/DOLAR Exchange")
     logging.info("========================")
     yen_df = get_dolar_exchange(
@@ -444,8 +444,10 @@ def get_yen_dolar_exchange(year: int, month: str):
 
     logging.debug(yen_df)
 
+    return yen_df
 
-def get_brazilian_real_dolar_exchange(year: int, month: str):
+
+def get_brazilian_real_dolar_exchange(year: int, month: str) -> pd.DataFrame:
     logging.info("Getting REAL/DOLAR Exchange")
     logging.info("========================")
     real_df = get_dolar_exchange(
@@ -460,6 +462,8 @@ def get_brazilian_real_dolar_exchange(year: int, month: str):
         ),
     )
     logging.debug(real_df)
+
+    return real_df
 
 
 def get_expected_pbi(year: int):
@@ -605,6 +609,14 @@ def read_parameters(file_path: str, sheet_name: str):
             "function": get_euro_exchange_rate,
             "format": "%Y-%m-%d",
             "sheet_name_output": "Euro Exchange Rate",
+        },
+        5: {
+            "function": get_yen_dolar_exchange,
+            "sheet_name_output": "Yen Dolar Exchange",
+        },
+        6: {
+            "function": get_brazilian_real_dolar_exchange,
+            "sheet_name_output": "Real Dolar Exchange",
         },
         12: {
             "function": get_intern_demand,
