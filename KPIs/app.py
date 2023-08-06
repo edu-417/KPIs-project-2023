@@ -477,7 +477,7 @@ def get_brazilian_real_dolar_exchange(year: int, month: str) -> pd.DataFrame:
     return real_df
 
 
-def get_expected_pbi(year: int):
+def get_expected_pbi(year: int) -> pd.DataFrame:
     logging.info("Getting Expected PBI")
     logging.info("========================")
     headers = {
@@ -487,7 +487,7 @@ def get_expected_pbi(year: int):
     file_content = requests.get(
         URL_EXPECTED_PBI, verify=False, headers=headers
     ).content
-    logging.debug(file_content)
+    # logging.debug(file_content)
     df = pd.read_excel(
         io.BytesIO(file_content), usecols="A:D", skiprows=3, sheet_name="PBI"
     )
@@ -496,11 +496,18 @@ def get_expected_pbi(year: int):
     condition = ~df["Expected Year"].str.contains("Expectativas", na=False)
     df.loc[condition, "Expected Year"] = np.nan
     df["Expected Year"] = df["Expected Year"].fillna(method="ffill")
+    df["Expected Year"] = df["Expected Year"].str.replace(
+        "Expectativas anuales de ", ""
+    )
     df = df.loc[
-        df["Expected Year"] == f"Expectativas anuales de {year}", columns
+        (df["Expected Year"] == f"{year}")
+        | (df["Expected Year"] == f"{year + 1}"),
+        columns,
     ]
     logging.debug(df)
     logging.info("Got Expected PBI")
+
+    return df
 
 
 def get_monetary_policie_rate(start_date: str, end_date: str) -> pd.DataFrame:
@@ -633,6 +640,10 @@ def read_parameters(file_path: str, sheet_name: str):
             "function": get_pbi,
             "sheet_name_output": "PBI",
         },
+        10: {
+            "function": get_expected_pbi,
+            "sheet_name_output": "Expected PBI",
+        },
         12: {
             "function": get_intern_demand,
             "sheet_name_output": "Intern Demand",
@@ -680,7 +691,11 @@ def read_parameters(file_path: str, sheet_name: str):
         function = kpi_map[row["N°"]].get("function")
         sheet_name = kpi_map[row["N°"]].get("sheet_name_output")
         if function:
-            df = function(row["Inicio"], row["Fin"])
+            logging.debug(row["Fin"])
+            if not pd.isna(row["Fin"]):
+                df = function(row["Inicio"], row["Fin"])
+            else:
+                df = function(row["Inicio"])
             try:
                 with pd.ExcelWriter("output.xlsx", mode="a") as writer:
                     df.to_excel(writer, sheet_name=sheet_name)
@@ -710,7 +725,7 @@ def main():
     # get_brazilian_real_dolar_exchange(2023, "Julio")
     # # KPI 9
     # get_pbi("2023-04", "2023-07")
-    # # KPI 10
+    # # KPI 10-11
     # get_expected_pbi(2023)
     # # KPI 12
     # get_intern_demand("2023-1", "2023-4")
