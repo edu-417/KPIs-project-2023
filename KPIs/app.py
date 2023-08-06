@@ -117,7 +117,7 @@ def get_vehicular_flow(year: str):
         logging.info("Got Vehicular Flow")
 
 
-def get_pbi(start_date: str, end_date: str):
+def get_pbi(start_date: str, end_date: str) -> pd.DataFrame:
     logging.info("Getting PBI")
     logging.info("========================")
     file_content = requests.get(URL_PBI, verify=False).content
@@ -131,6 +131,7 @@ def get_pbi(start_date: str, end_date: str):
             if "VA-PBI" in file_name
         ][0]
         logging.debug(f"pbi_file_name: {pbi_file_name}")
+
         with archive.open(pbi_file_name) as file:
             df = pd.read_excel(file, usecols="A:B", skiprows=3)
             df = df.dropna()
@@ -140,9 +141,11 @@ def get_pbi(start_date: str, end_date: str):
             df.reset_index(inplace=True)
             df["Año y Mes"] = df["Año y Mes"].dt.strftime("%Y-%m")
             df.set_index("Año y Mes", inplace=True)
-            df.to_excel("out.xlsx", "PBI")
+
             logging.debug(df)
             logging.info("Got PBI")
+
+            return df
 
 
 def get_intern_demand(start_date: str, end_date: str) -> pd.DataFrame:
@@ -617,6 +620,10 @@ def read_parameters(file_path: str, sheet_name: str):
         6: {
             "function": get_brazilian_real_dolar_exchange,
             "sheet_name_output": "Real Dolar Exchange",
+        },
+        9: {
+            "function": get_pbi,
+            "sheet_name_output": "PBI",
         },
         12: {
             "function": get_intern_demand,
