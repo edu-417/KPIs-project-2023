@@ -343,12 +343,13 @@ def get_raw_material_price(
     ]
 
     data = {"Period": columns[2:], "Price": material_values}
-    return pd.DataFrame(data)
+
+    return pd.DataFrame(data).set_index("Period")
 
 
 def get_copper_price(
     start_year: int, end_year: int, frequency: str = "MONTHLY"
-):
+) -> pd.DataFrame:
     logging.info("Getting Copper Price")
     logging.info("========================")
     COOPER_ROW_INDEX = 4
@@ -361,10 +362,12 @@ def get_copper_price(
     logging.debug(copper_price_df)
     logging.info("Got Copper Price")
 
+    return copper_price_df
+
 
 def get_petroleum_wti_price(
     start_year: int, end_year: int, frequency: str = "MONTHLY"
-):
+) -> pd.DataFrame:
     logging.info("Getting Petroleum WTI Price")
     logging.info("========================")
     PETROLEUM_WTI_INDEX = 9
@@ -375,6 +378,8 @@ def get_petroleum_wti_price(
 
     logging.debug(petroleum_wti_df)
     logging.info("Got Petroleum WTI Price")
+
+    return petroleum_wti_df
 
 
 def get_dolar_exchange_rate(start_date: str, end_date: str) -> pd.DataFrame:
@@ -650,6 +655,14 @@ def read_parameters(file_path: str, sheet_name: str):
         18: {
             "function": get_price_index,
             "sheet_name_output": "Price Index",
+        },
+        20: {
+            "function": get_copper_price,
+            "sheet_name_output": "Copper Price",
+        },
+        21: {
+            "function": get_petroleum_wti_price,
+            "sheet_name_output": "Petroleum WTI Price",
         },
     }
 
