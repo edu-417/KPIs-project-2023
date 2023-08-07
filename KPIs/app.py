@@ -289,7 +289,7 @@ def get_10years_treasury_bill_rate(
     return df
 
 
-def get_djones_rate(start_date: str, end_date: str):
+def get_djones_rate(start_date: str, end_date: str) -> pd.DataFrame:
     logging.info("Getting Dow Jones Rates")
     logging.info("========================")
     rate_id = "SU5ELkRPV0pPTkVTLklORkJPTA"
@@ -297,8 +297,10 @@ def get_djones_rate(start_date: str, end_date: str):
     logging.info(df)
     logging.info("Got Dow Jones Rates")
 
+    return df
 
-def get_sp_bvl_general_index(start_date: str, end_date: str):
+
+def get_sp_bvl_general_index(start_date: str, end_date: str) -> pd.DataFrame:
     logging.info("Getting SP BVL General indexes")
     logging.info("========================")
 
@@ -323,6 +325,8 @@ def get_sp_bvl_general_index(start_date: str, end_date: str):
     )
     logging.info(df)
     logging.info("Got SP BVL General indexes")
+
+    return df
 
 
 def get_raw_material_price(
@@ -721,6 +725,16 @@ def read_parameters(file_path: str, sheet_name: str):
         21: {
             "function": get_petroleum_wti_price,
             "sheet_name_output": "Petroleum WTI Price",
+        },
+        23: {
+            "function": get_sp_bvl_general_index,
+            "format": "%Y-%m",
+            "sheet_name_output": "S&P BVL",
+        },
+        24: {
+            "function": get_djones_rate,
+            "format": "%Y-%m",
+            "sheet_name_output": "Djones Rate",
         },
     }
 
