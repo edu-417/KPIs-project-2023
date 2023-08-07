@@ -247,7 +247,7 @@ def get_month_last(start_date: str):
     return date_time.strftime("%Y-%m-%d")
 
 
-def get_ml_rate(rate_id: str, start_date: str, end_date: str):
+def get_ml_rate(rate_id: str, start_date: str, end_date: str) -> pd.DataFrame:
     start_date = get_month_1st(start_date)
     end_date = get_month_last(end_date)
 
@@ -263,7 +263,9 @@ def get_ml_rate(rate_id: str, start_date: str, end_date: str):
     return format_values_per_month(jsonResponse["chart"], start_date, "y", "x")
 
 
-def get_5years_treasury_bill_rate(start_date: str, end_date: str):
+def get_5years_treasury_bill_rate(
+    start_date: str, end_date: str
+) -> pd.DataFrame:
     logging.info("Getting 5 Years Treasury Bill Rates")
     logging.info("========================")
     rate_id = "UlRFLlVTVFI1WS5JU0YuRk0"
@@ -271,14 +273,20 @@ def get_5years_treasury_bill_rate(start_date: str, end_date: str):
     logging.debug(df)
     logging.info("Got 5 Years Treasury Bill Rates")
 
+    return df
 
-def get_10years_treasury_bill_rate(start_date: str, end_date: str):
+
+def get_10years_treasury_bill_rate(
+    start_date: str, end_date: str
+) -> pd.DataFrame:
     logging.info("Getting 10 Years Treasury Bill Rates")
     logging.info("========================")
     rate_id = "UlRFLlVTVFIxMFkuSVNGLkZN"
     df = get_ml_rate(rate_id, start_date, end_date)
     logging.debug(df)
     logging.info("Got 10 Years Treasury Bill Rates")
+
+    return df
 
 
 def get_djones_rate(start_date: str, end_date: str):
@@ -691,6 +699,16 @@ def read_parameters(file_path: str, sheet_name: str):
             "function": get_peruvian_goverment_bond,
             "format": "%Y-%m",
             "sheet_name_output": "10 Years Peruvian Goverment Bond",
+        },
+        16: {
+            "function": get_5years_treasury_bill_rate,
+            "format": "%Y-%m",
+            "sheet_name_output": "5 Years Treasure Bill Rate",
+        },
+        17: {
+            "function": get_10years_treasury_bill_rate,
+            "format": "%Y-%m",
+            "sheet_name_output": "10 Years Treasure Bill Rate",
         },
         18: {
             "function": get_price_index,
