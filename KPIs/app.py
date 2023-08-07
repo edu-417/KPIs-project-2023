@@ -188,12 +188,19 @@ def get_bcrp_data(start_date: str, end_date: str, url: str) -> pd.DataFrame:
     df = pd.DataFrame(data)
     df.columns = ["Period", "Value"]
     df.set_index("Period", inplace=True)
+    df = df.explode("Value")
+    df["Value"] = df["Value"].astype(float)
 
-    return df.explode("Value")
+    return df
 
 
 def format_values_per_month(
-    data, start_date_str: str, end_date_str: str, index_value_name: str, index_date_name: str, divisor = 1
+    data,
+    start_date_str: str,
+    end_date_str: str,
+    index_value_name: str,
+    index_date_name: str,
+    divisor=1,
 ):
     last_days_dict = {}
     rates_dict = {}
@@ -255,7 +262,9 @@ def get_month_last(start_date: str):
     return date_time.strftime("%Y-%m-%d")
 
 
-def get_ml_rate(rate_id: str, start_date: str, end_date: str, divisor = 100) -> pd.DataFrame:
+def get_ml_rate(
+    rate_id: str, start_date: str, end_date: str, divisor=100
+) -> pd.DataFrame:
     start_date = get_month_1st(start_date)
     end_date = get_month_last(end_date)
 
@@ -268,7 +277,9 @@ def get_ml_rate(rate_id: str, start_date: str, end_date: str, divisor = 100) -> 
     response = requests.get(url, params=params, headers=headers, verify=False)
     jsonResponse = response.json()
 
-    return format_values_per_month(jsonResponse["chart"], start_date, end_date, "y", "x", divisor)
+    return format_values_per_month(
+        jsonResponse["chart"], start_date, end_date, "y", "x", divisor
+    )
 
 
 def get_5years_treasury_bill_rate(
@@ -327,7 +338,8 @@ def get_sp_bvl_general_index(start_date: str, end_date: str) -> pd.DataFrame:
 
     df = format_values_per_month(
         jsonResponse["indexLevelsHolder"]["indexLevels"],
-        start_date, end_date,
+        start_date,
+        end_date,
         "indexValue",
         "effectiveDate",
     )
