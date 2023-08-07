@@ -97,7 +97,6 @@ def get_vehicular_flow(year: str):
             if y0 > max_y0:
                 y0 = max_y0
                 month = i.text
-        logging.debug(month)
 
         lttext_amounts = pdf.tree.xpath(
             '//LTPage[@pageid="13"]/LTTextLineVertical/LTTextBoxVertical'
@@ -112,9 +111,14 @@ def get_vehicular_flow(year: str):
                 min_dist = dist
                 amount = i.text
         amount = amount[max(len(amount) - 11, 0) :].replace(" ", "")
-        logging.debug(amount)
 
         logging.info("Got Vehicular Flow")
+
+        date = f"{year}-{month}"
+        lst = [date, amount]
+        df = pd.DataFrame(lst)
+        logging.debug(df)
+        return df
 
 
 def get_pbi(start_date: str, end_date: str) -> pd.DataFrame:
@@ -189,11 +193,12 @@ def get_bcrp_data(start_date: str, end_date: str, url: str) -> pd.DataFrame:
 
 
 def format_values_per_month(
-    data, start_date_str: str, index_value_name: str, index_date_name: str
+    data, start_date_str: str, end_date_str: str, index_value_name: str, index_date_name: str, divisor = 1
 ):
     last_days_dict = {}
     rates_dict = {}
     start_date = datetime.datetime.strptime(start_date_str, "%Y-%m-%d")
+    end_date = datetime.datetime.strptime(end_date_str, "%Y-%m-%d")
 
     for value in data:
         date = pd.to_datetime(value[index_date_name], utc=True, unit="ms")
@@ -201,15 +206,18 @@ def format_values_per_month(
         if date.date() < start_date.date():
             continue
 
+        if date.date() > end_date.date():
+            continue
+
         rate = value[index_value_name]
         year_month = f"{date.year}-{date.month}"
         if year_month in last_days_dict:
             if date.day > last_days_dict[year_month]:
                 last_days_dict[year_month] = date.day
-                rates_dict[year_month] = rate
+                rates_dict[year_month] = rate / divisor
         else:
             last_days_dict[year_month] = date.day
-            rates_dict[year_month] = rate
+            rates_dict[year_month] = rate / divisor
 
     date_list = []
     for key in last_days_dict:
@@ -247,7 +255,7 @@ def get_month_last(start_date: str):
     return date_time.strftime("%Y-%m-%d")
 
 
-def get_ml_rate(rate_id: str, start_date: str, end_date: str) -> pd.DataFrame:
+def get_ml_rate(rate_id: str, start_date: str, end_date: str, divisor = 100) -> pd.DataFrame:
     start_date = get_month_1st(start_date)
     end_date = get_month_last(end_date)
 
@@ -260,7 +268,7 @@ def get_ml_rate(rate_id: str, start_date: str, end_date: str) -> pd.DataFrame:
     response = requests.get(url, params=params, headers=headers, verify=False)
     jsonResponse = response.json()
 
-    return format_values_per_month(jsonResponse["chart"], start_date, "y", "x")
+    return format_values_per_month(jsonResponse["chart"], start_date, end_date, "y", "x", divisor)
 
 
 def get_5years_treasury_bill_rate(
@@ -269,7 +277,7 @@ def get_5years_treasury_bill_rate(
     logging.info("Getting 5 Years Treasury Bill Rates")
     logging.info("========================")
     rate_id = "UlRFLlVTVFI1WS5JU0YuRk0"
-    df = get_ml_rate(rate_id, start_date, end_date)
+    df = get_ml_rate(rate_id, start_date, end_date, 100)
     logging.debug(df)
     logging.info("Got 5 Years Treasury Bill Rates")
 
@@ -282,7 +290,7 @@ def get_10years_treasury_bill_rate(
     logging.info("Getting 10 Years Treasury Bill Rates")
     logging.info("========================")
     rate_id = "UlRFLlVTVFIxMFkuSVNGLkZN"
-    df = get_ml_rate(rate_id, start_date, end_date)
+    df = get_ml_rate(rate_id, start_date, end_date, 100)
     logging.debug(df)
     logging.info("Got 10 Years Treasury Bill Rates")
 
@@ -294,7 +302,7 @@ def get_djones_rate(start_date: str, end_date: str) -> pd.DataFrame:
     logging.info("========================")
     rate_id = "SU5ELkRPV0pPTkVTLklORkJPTA"
     df = get_ml_rate(rate_id, start_date, end_date)
-    logging.info(df)
+    logging.debug(df)
     logging.info("Got Dow Jones Rates")
 
     return df
@@ -319,11 +327,11 @@ def get_sp_bvl_general_index(start_date: str, end_date: str) -> pd.DataFrame:
 
     df = format_values_per_month(
         jsonResponse["indexLevelsHolder"]["indexLevels"],
-        start_date,
+        start_date, end_date,
         "indexValue",
         "effectiveDate",
     )
-    logging.info(df)
+    logging.debug(df)
     logging.info("Got SP BVL General indexes")
 
     return df
@@ -640,9 +648,12 @@ def get_sbs_usd_exchange_rate(date: str):
 
             date_time -= datetime.timedelta(days=1)
 
-        logging.debug(value)
-        logging.debug(date_time.strftime("%Y-%m-%d"))
         logging.info("Got SBS USD Exchange Rate")
+        date_time_str = date_time.strftime("%Y-%m-%d")
+        lst = [date_time_str, value]
+        df = pd.DataFrame(lst)
+        logging.debug(df)
+        return df
 
 
 def read_parameters(file_path: str, sheet_name: str):
@@ -809,7 +820,7 @@ def main():
     # # KPI 23
     # get_sp_bvl_general_index("2022-06", "2023-07")
     # # KPI 24
-    # get_djones_rate("2022-06", "2023-08")
+    # get_djones_rate("2022-06", "2023-07")
     # # KPI 29
     # get_sbs_usd_exchange_rate("2023-06-29")
 
