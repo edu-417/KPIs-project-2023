@@ -533,6 +533,9 @@ def get_brazilian_real_dolar_exchange(year: int, month: str) -> pd.DataFrame:
             "BADcAVgBNADgAQgA0ADkAYwBsAFkAWgBIAG0ALgB1AFkAUQA="
         ),
     )
+
+    real_df["Value"] /= 10000
+
     logging.debug(real_df)
 
     return real_df
