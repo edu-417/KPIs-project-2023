@@ -68,7 +68,7 @@ def get_electricity(start_date: str, end_date: str) -> pd.DataFrame:
     return electricity_df
 
 
-def get_vehicular_flow(year: str):
+def get_vehicular_flow(year: str) -> pd.DataFrame:
     logging.info("Getting Vehicular Flow")
     logging.info("========================")
     pdf_file_name = "temp_vehicular_flow.pdf"
@@ -610,7 +610,7 @@ def get_peruvian_goverment_bond(start_date: str, end_date: str) -> pd.DataFrame:
     return peruvian_goverment_bond_df
 
 
-def get_sbs_usd_exchange_rate(date: str):
+def get_sbs_usd_exchange_rate(date: str) -> pd.DataFrame:
     logging.info("Getting SBS USD Exchange Rate")
     logging.info("========================")
     headers = {"user-agent": USER_AGENT}
@@ -687,6 +687,10 @@ def read_parameters(file_path: str, sheet_name: str):
             "function": get_electricity,
             "format": "%Y-%m",
             "sheet_name_output": "Electricity (GWH)",
+        },
+        2: {
+            "function": get_vehicular_flow,
+            "sheet_name_output": "Vehicular Flow",
         },
         3: {
             "function": get_dolar_exchange_rate,
@@ -765,6 +769,11 @@ def read_parameters(file_path: str, sheet_name: str):
             "format": "%Y-%m",
             "sheet_name_output": "Djones Rate",
         },
+        29: {
+            "function": get_sbs_usd_exchange_rate,
+            "format": "%Y-%m-%d",
+            "sheet_name_output": "SBS USD Exchange Rate",
+        },
     }
 
     parameters_df = parameters_df[parameters_df["N°"].isin(kpi_map.keys())]
@@ -773,7 +782,8 @@ def read_parameters(file_path: str, sheet_name: str):
         format = kpi_map[row["N°"]].get("format")
         if format:
             row["Inicio"] = row["Inicio"].strftime(format)
-            row["Fin"] = row["Fin"].strftime(format)
+            if not pd.isna(row["Fin"]):
+                row["Fin"] = row["Fin"].strftime(format)
 
         return row
 
