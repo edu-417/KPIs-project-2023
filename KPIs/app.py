@@ -109,13 +109,13 @@ def get_vehicular_flow(year: str) -> pd.DataFrame:
             if dist < min_dist:
                 min_dist = dist
                 amount = i.text
-        amount = amount[max(len(amount) - 11, 0) :].replace(" ", "")
+        amount_value = int(amount[max(len(amount) - 11, 0) :].replace(" ", ""))
 
         logging.info("Got Vehicular Flow")
         date = f"{year}-{month}"
         logging.debug(date)
-        df = pd.DataFrame({"Value": [amount]}, index=[date])
-        logging.info(df)
+        df = pd.DataFrame({"Period": [date], "Value": [amount_value]}).set_index("Period")
+        logging.debug(df)
         return df
 
 
@@ -634,7 +634,7 @@ def get_sbs_usd_exchange_rate(date: str) -> pd.DataFrame:
         data["ctl00$cphContent$btnConsultar"] = "Consultar"
 
         date_time = datetime.datetime.strptime(date, "%Y-%m-%d")
-        value = 0
+        value = float(0)
         for i in range(31):
             date_time_str = date_time.strftime("%Y-%m-%d-%H-%M-%S")
             date_str = date_time.strftime("%d/%m/%Y")
@@ -660,15 +660,15 @@ def get_sbs_usd_exchange_rate(date: str) -> pd.DataFrame:
                 "#ctl00_cphContent_rgTipoCambio_ctl00__0 > td:nth-child(3)"
             )
             if len(values) > 0 and values[0].getText().strip() != "":
-                value = values[0].getText().strip()
+                value = float(values[0].getText().strip())
                 break
 
             date_time -= datetime.timedelta(days=1)
 
         logging.info("Got SBS USD Exchange Rate")
         date_time_str = date_time.strftime("%Y-%m-%d")
-        df = pd.DataFrame({"Value": [value]}, index=[date_time_str])
-        logging.info(df)
+        df = pd.DataFrame({"Period": [date_time_str], "Value": [value]}).set_index("Period")
+        logging.debug(df)
         return df
 
 
