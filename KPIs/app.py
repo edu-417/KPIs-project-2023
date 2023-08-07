@@ -188,8 +188,7 @@ def get_bcrp_data(start_date: str, end_date: str, url: str) -> pd.DataFrame:
 
     data = json_response["periods"]
 
-    df = pd.DataFrame(data)
-    df.columns = ["Period", "Value"]
+    df = pd.DataFrame(data, columns=["Period", "Value"])
     df.set_index("Period", inplace=True)
     df = df.explode("Value")
     df["Value"] = df["Value"].astype(float)
