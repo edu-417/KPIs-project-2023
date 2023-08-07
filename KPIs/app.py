@@ -112,11 +112,10 @@ def get_vehicular_flow(year: str) -> pd.DataFrame:
         amount = amount[max(len(amount) - 11, 0) :].replace(" ", "")
 
         logging.info("Got Vehicular Flow")
-
         date = f"{year}-{month}"
-        lst = [date, amount]
-        df = pd.DataFrame(lst)
-        logging.debug(df)
+        logging.debug(date)
+        df = pd.DataFrame({"Value": [amount]}, index=[date])
+        logging.info(df)
         return df
 
 
@@ -667,9 +666,8 @@ def get_sbs_usd_exchange_rate(date: str) -> pd.DataFrame:
 
         logging.info("Got SBS USD Exchange Rate")
         date_time_str = date_time.strftime("%Y-%m-%d")
-        lst = [date_time_str, value]
-        df = pd.DataFrame(lst)
-        logging.debug(df)
+        df = pd.DataFrame({"Value": [value]}, index=[date_time_str])
+        logging.info(df)
         return df
 
 
@@ -849,7 +847,7 @@ def main():
     # # KPI 24
     # get_djones_rate("2022-06", "2023-07")
     # # KPI 29
-    # get_sbs_usd_exchange_rate("2023-06-29")
+    get_sbs_usd_exchange_rate("2023-06-29")
 
 
 if __name__ == "__main__":
