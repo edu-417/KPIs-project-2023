@@ -39,9 +39,8 @@ URL_BASE_INEI = "https://www.inei.gob.pe"
 URL_BASE_INTERN_DEMAND = f"{URL_BCRP_STATISTICS}/api/PN02529AQ/json"
 URL_BASE_UNEMPLOYEMENT_RATE = f"{URL_BCRP_STATISTICS}/api/PN38063GM/json"
 URL_BASE_TOLL = f"{URL_BASE_INEI}/biblioteca-virtual/boletines/flujo-vehicular"
-URL_INDEX_PRICE = (
-    f"{URL_BASE_INEI}/media/MenuRecursivo/indices_tematicos/"
-    "02_indice-precios_al_consumidor-nivel_nacional_2b_16.xlsx"
+URL_INEI_PRICE_INDEX = (
+    f"{URL_BASE_INEI}/estadisticas/indice-tematico/price-indexes/"
 )
 URL_RAW_MATERIAL_PRICE = (
     f"{URL_BASE_BCENTRAL_CHILE}/Siete/ES/Siete/Cuadro/CAP_EI/MN_EI11/"
@@ -167,7 +166,11 @@ def get_intern_demand(start_date: str, end_date: str) -> pd.DataFrame:
 def get_price_index(year: int, month: str) -> pd.DataFrame:
     logging.info("Getting Price Index")
     logging.info("========================")
-    file_content = requests.get(URL_INDEX_PRICE, verify=False).content
+    response = requests.get(URL_INEI_PRICE_INDEX, verify=False)
+    soup = BeautifulSoup(response.text, "html.parser")
+    anchor = soup.css.select("a[title='IPC Nacional']")[0]
+    link = f"{URL_BASE_INEI}{anchor.get('href')}"
+    file_content = requests.get(link, verify=False).content
     df = pd.read_excel(io.BytesIO(file_content), skiprows=3)
     df = df.fillna(method="ffill")
     df["Año"] = df["Año"].astype(int)
