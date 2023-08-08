@@ -114,7 +114,9 @@ def get_vehicular_flow(year: str) -> pd.DataFrame:
         logging.info("Got Vehicular Flow")
         date = f"{year}-{month}"
         logging.debug(date)
-        df = pd.DataFrame({"Period": [date], "Value": [amount_value]}).set_index("Period")
+        df = pd.DataFrame(
+            {"Period": [date], "Value": [amount_value]}
+        ).set_index("Period")
         logging.debug(df)
         return df
 
@@ -167,7 +169,7 @@ def get_price_index(year: int, month: str) -> pd.DataFrame:
     logging.info("========================")
     response = requests.get(URL_INEI_PRICE_INDEX, verify=False)
     soup = BeautifulSoup(response.text, "html.parser")
-    anchor = soup.css.select("a[title='IPC Nacional']")[0]
+    anchor = soup.select("a[title='IPC Nacional']")[0]
     link = f"{URL_BASE_INEI}{anchor.get('href')}"
     file_content = requests.get(link, verify=False).content
     df = pd.read_excel(io.BytesIO(file_content), skiprows=3)
@@ -363,12 +365,12 @@ def get_raw_material_price(
     }
     response = requests.get(URL_RAW_MATERIAL_PRICE, params=params)
     soup = BeautifulSoup(response.text, "html.parser")
-    header = soup.css.select("thead > tr > .thData")
+    header = soup.select("thead > tr > .thData")
     columns = [column.getText() for column in header]
-    rows = soup.css.select("#tbodyGrid > tr > td > .sname")
+    rows = soup.select("#tbodyGrid > tr > td > .sname")
     logging.debug(rows)
 
-    raw_material_values = soup.css.select(
+    raw_material_values = soup.select(
         f"#tbodyGrid > tr:nth-of-type({row_index}) > .ar"
     )
     material_values = [
@@ -656,7 +658,7 @@ def get_sbs_usd_exchange_rate(date: str) -> pd.DataFrame:
 
             p = s.post(URL_SBS_TC, data=data, headers=headers)
             soup = BeautifulSoup(p.content, "html.parser")
-            values = soup.css.select(
+            values = soup.select(
                 "#ctl00_cphContent_rgTipoCambio_ctl00__0 > td:nth-child(3)"
             )
             if len(values) > 0 and values[0].getText().strip() != "":
@@ -667,7 +669,9 @@ def get_sbs_usd_exchange_rate(date: str) -> pd.DataFrame:
 
         logging.info("Got SBS USD Exchange Rate")
         date_time_str = date_time.strftime("%Y-%m-%d")
-        df = pd.DataFrame({"Period": [date_time_str], "Value": [value]}).set_index("Period")
+        df = pd.DataFrame(
+            {"Period": [date_time_str], "Value": [value]}
+        ).set_index("Period")
         logging.debug(df)
         return df
 
