@@ -793,18 +793,21 @@ def read_parameters(file_path: str, sheet_name: str):
         function = kpi_map.get(row["N°"], {}).get("function")
         sheet_name = kpi_map.get(row["N°"], {}).get("sheet_name_output")
         if function:
-            logging.debug(row["Fin"])
-            if not pd.isna(row["Fin"]):
-                df = function(row["Inicio"], row["Fin"])
-            else:
-                df = function(row["Inicio"])
+            try:
+                logging.debug(row["Fin"])
+                if not pd.isna(row["Fin"]):
+                    df = function(row["Inicio"], row["Fin"])
+                else:
+                    df = function(row["Inicio"])
+            except Exception as e:
+                logging.error(f"Error executing function {function}: {e}")
             try:
                 with pd.ExcelWriter(
                     "output.xlsx", mode="a", if_sheet_exists="replace"
                 ) as writer:
                     df.to_excel(writer, sheet_name=sheet_name)
             except Exception as e:
-                logging.error(f"error: {e}")
+                logging.error(f"Error wrting to sheet_name: {sheet_name}: {e}")
                 with pd.ExcelWriter("output.xlsx", mode="w") as writer:
                     df.to_excel(writer, sheet_name=sheet_name)
 
