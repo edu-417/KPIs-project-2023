@@ -790,8 +790,8 @@ def read_parameters(file_path: str, sheet_name: str):
         return row
 
     def execute(row):
-        function = kpi_map[row["N°"]].get("function")
-        sheet_name = kpi_map[row["N°"]].get("sheet_name_output")
+        function = kpi_map.get(row["N°"], {}).get("function")
+        sheet_name = kpi_map.get(row["N°"], {}).get("sheet_name_output")
         if function:
             logging.debug(row["Fin"])
             if not pd.isna(row["Fin"]):
@@ -799,7 +799,9 @@ def read_parameters(file_path: str, sheet_name: str):
             else:
                 df = function(row["Inicio"])
             try:
-                with pd.ExcelWriter("output.xlsx", mode="a") as writer:
+                with pd.ExcelWriter(
+                    "output.xlsx", mode="a", if_sheet_exists="replace"
+                ) as writer:
                     df.to_excel(writer, sheet_name=sheet_name)
             except Exception as e:
                 logging.error(f"error: {e}")
