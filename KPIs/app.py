@@ -802,7 +802,7 @@ def read_parameters(file_path: str, sheet_name: str):
                 with pd.ExcelWriter("output.xlsx", mode="a") as writer:
                     df.to_excel(writer, sheet_name=sheet_name)
             except Exception as e:
-                print(f"error: {e}")
+                logging.error(f"error: {e}")
                 with pd.ExcelWriter("output.xlsx", mode="w") as writer:
                     df.to_excel(writer, sheet_name=sheet_name)
 
