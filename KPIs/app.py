@@ -325,7 +325,7 @@ def get_djones_rate(start_date: str, end_date: str) -> pd.DataFrame:
     logging.info("Getting Dow Jones Rates")
     logging.info("========================")
     rate_id = "SU5ELkRPV0pPTkVTLklORkJPTA"
-    df = get_ml_rate(rate_id, start_date, end_date)
+    df = get_ml_rate(rate_id, start_date, end_date, 1)
     logging.debug(df)
     logging.info("Got Dow Jones Rates")
 
