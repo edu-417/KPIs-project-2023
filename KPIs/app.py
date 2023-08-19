@@ -1,5 +1,6 @@
 import datetime
 import io
+import json
 import logging
 import zipfile
 
@@ -32,10 +33,9 @@ URL_SBS_TC = (
     "https://www.sbs.gob.pe/app/pp/sistip_portal/paginas/publicacion/"
     "tipocambiopromedio.aspx"
 )
-URL_PBI = (
-    "https://www.inei.gob.pe/media/principales_indicadores/CalculoPBI_120.zip"
-)
 URL_BASE_INEI = "https://www.inei.gob.pe"
+URL_INEI_PBI = "https://www.gob.pe/inei/"
+URL_PBI = f"{URL_BASE_INEI}/media/principales_indicadores"
 URL_BASE_INTERN_DEMAND = f"{URL_BCRP_STATISTICS}/api/PN02529AQ/json"
 URL_BASE_UNEMPLOYEMENT_RATE = f"{URL_BCRP_STATISTICS}/api/PN38063GM/json"
 URL_BASE_TOLL = f"{URL_BASE_INEI}/biblioteca-virtual/boletines/flujo-vehicular"
@@ -124,7 +124,16 @@ def get_vehicular_flow(year: str) -> pd.DataFrame:
 def get_pbi(start_date: str, end_date: str) -> pd.DataFrame:
     logging.info("Getting PBI")
     logging.info("========================")
-    file_content = requests.get(URL_PBI, verify=False).content
+    response = requests.get(URL_INEI_PBI, verify=False)
+    soup = BeautifulSoup(response.text, "html.parser")
+    button = soup.select(
+        "#download-resumen_5-mensual-report > .js-btn-download-report"
+    )[0]
+    logging.debug(button)
+    data_url = button.get("data-url")
+    data_url = json.loads(data_url)
+    link = data_url.get("excel")
+    file_content = requests.get(link, verify=False).content
 
     with zipfile.ZipFile(io.BytesIO(file_content)) as archive:
         logging.debug(archive.namelist())
