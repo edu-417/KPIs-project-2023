@@ -1,4 +1,4 @@
-# betty-project-2023
+# KPIs-project-2023
 
 This project is intendend to automate getting KPIs from some web pages.
 
