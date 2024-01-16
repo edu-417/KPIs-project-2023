@@ -202,6 +202,7 @@ def get_bcrp_data(start_date: str, end_date: str, url: str) -> pd.DataFrame:
     df.columns = ["Period", "Value"]
     df.set_index("Period", inplace=True)
     df = df.explode("Value")
+    df = df[df["Value"] != "n.d."]]
     df["Value"] = df["Value"].astype(float)
 
     return df
