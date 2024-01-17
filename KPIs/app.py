@@ -261,14 +261,20 @@ def get_unemployment_rate(start_date: str, end_date: str) -> pd.DataFrame:
 
     return unemployment_rate_df
 
+def get_next_year_month(year: int, month: int):
+    next_year = year + 1 if month == 12 else year
+    next_month = 1 if month == 12 else month + 1
+    return next_year, next_month
+
 
 def get_month_1st(start_date: str):
     return f"{start_date}-01"
 
 
 def get_month_last(start_date: str):
+    next_year, next_month = get_next_year_month(int(start_date[0:4]), int(start_date[5:7]))
     date_time = datetime.date(
-        int(start_date[0:4]), int(start_date[5:7]) + 1, 1
+        next_year, next_month, 1
     ) - datetime.timedelta(days=1)
     current_time = datetime.datetime.now().date()
     if current_time < date_time:
@@ -459,56 +465,74 @@ def get_euro_exchange_rate(start_date: str, end_date: str) -> pd.DataFrame:
 
 
 def get_dolar_exchange(year: int, month: str, currency_code: str, param: str):
-    params = {"gcode": f"PAR_{currency_code}", "param": param}
+    headers = {"user-agent": USER_AGENT}
+    url = f"{URL_DOLAR_EXCHANGE}?gcode=PAR_{currency_code}&param={param}"
 
-    data = {"DrDwnFechas": year, "hdnFrecuencia": "DAILY"}
+    with requests.Session() as s:
+        r = s.get(url, headers=headers)
+        soup = BeautifulSoup(r.content, "html.parser")
 
-    response = requests.post(URL_DOLAR_EXCHANGE, params=params, data=data)
-    soup = BeautifulSoup(response.text, "html.parser")
+        data = dict()
+        data["__EVENTVALIDATION"] = soup.find(
+            "input", attrs={"id": "__EVENTVALIDATION"}
+        )["value"]
+        data["__VIEWSTATE"] = soup.find("input", attrs={"id": "__VIEWSTATE"})[
+            "value"
+        ]
+        data["__VIEWSTATEGENERATOR"] = soup.find(
+            "input", attrs={"id": "__VIEWSTATEGENERATOR"}
+        )["value"]
+        data["__EVENTTARGET"] = "DrDwnFechas"
+        data["DrDwnFechas"] = year
+        data["hdnFrecuencia"] = "DAILY"
 
-    MONTH_INDEX = {
-        "Enero": 1,
-        "Febrero": 2,
-        "Marzo": 3,
-        "Abril": 4,
-        "Mayo": 5,
-        "Junio": 6,
-        "Julio": 7,
-        "Agosto": 8,
-        "Septiembre": 9,
-        "Octubre": 10,
-        "Noviembre": 11,
-        "Diciembre": 12,
-    }
+        p = s.post(url, data=data, headers=headers)
+        soup = BeautifulSoup(p.content, "html.parser")
 
-    month_index = MONTH_INDEX[month]
-    days = pd.date_range(
-        f"{year}-{month_index:02d}-01",
-        f"{year}-{(month_index + 1):02d}-01",
-        inclusive="left",
-    )
+        MONTH_INDEX = {
+            "Enero": 1,
+            "Febrero": 2,
+            "Marzo": 3,
+            "Abril": 4,
+            "Mayo": 5,
+            "Junio": 6,
+            "Julio": 7,
+            "Agosto": 8,
+            "Septiembre": 9,
+            "Octubre": 10,
+            "Noviembre": 11,
+            "Diciembre": 12,
+        }
 
-    values = []
+        month_index = MONTH_INDEX[month]
+        next_year, next_month_index = get_next_year_month(year, month_index)
+            
+        days = pd.date_range(
+            f"{year}-{month_index:02d}-01",
+            f"{next_year}-{(next_month_index):02d}-01",
+            inclusive="left",
+        )
 
-    for day in range(1, days.shape[0] + 1):
-        id = f"gr_ctl{(day + 1):02d}_{month}"
-        value_td = soup.find(id=id)
-        values.append(value_td.getText().strip())
+        values = []
+        for day in range(1, days.shape[0] + 1):
+            id = f"gr_ctl{(day + 1):02d}_{month}"
+            value_td = soup.find(id=id)
+            values.append(value_td.getText().strip())
 
-    logging.debug(values)
-    data = {"Day": days, "Value": values}
+        logging.debug(values)
+        data = {"Day": days, "Value": values}
 
-    df = pd.DataFrame(data)
-    df.replace("", np.nan, inplace=True)
-    df.dropna(inplace=True)
-    df["Value"] = df["Value"].str.replace(",", "")
-    df["Value"] = df["Value"].astype(float)
+        df = pd.DataFrame(data)
+        df.replace("", np.nan, inplace=True)
+        df.dropna(inplace=True)
+        df["Value"] = df["Value"].str.replace(",", "")
+        df["Value"] = df["Value"].astype(float)
 
-    df["Day"] = df["Day"].dt.strftime("%Y-%m-%d")
+        df["Day"] = df["Day"].dt.strftime("%Y-%m-%d")
 
-    df.set_index("Day", inplace=True)
-
-    return df
+        df.set_index("Day", inplace=True)
+        
+        return df
 
 
 def get_yen_dolar_exchange(year: int, month: str) -> pd.DataFrame:
@@ -556,34 +580,39 @@ def get_brazilian_real_dolar_exchange(year: int, month: str) -> pd.DataFrame:
 
 
 def get_expected_pbi(year: int) -> pd.DataFrame:
-    logging.info("Getting Expected PBI")
-    logging.info("========================")
-    headers = {
-        "User-Agent": USER_AGENT,
-        "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
-    }
-    file_content = requests.get(
-        URL_EXPECTED_PBI, verify=False, headers=headers
-    ).content
-    # logging.debug(file_content)
-    df = pd.read_excel(
-        io.BytesIO(file_content), usecols="A:D", skiprows=3, sheet_name="PBI"
-    )
-    columns = df.columns
-    df["Expected Year"] = df["Fecha"]
-    condition = ~df["Expected Year"].str.contains("Expectativas", na=False)
-    df.loc[condition, "Expected Year"] = np.nan
-    df["Expected Year"] = df["Expected Year"].fillna(method="ffill")
-    df["Expected Year"] = df["Expected Year"].str.replace(
-        "Expectativas anuales de ", ""
-    )
-    df = df.loc[
-        (df["Expected Year"] == f"{year}")
-        | (df["Expected Year"] == f"{year + 1}"),
-        columns,
-    ]
-    logging.debug(df)
-    logging.info("Got Expected PBI")
+    try:
+
+        logging.info("Getting Expected PBI")
+        logging.info("========================")
+        headers = {
+            "User-Agent": USER_AGENT,
+            "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+        }
+        file_content = requests.get(
+            URL_EXPECTED_PBI, verify=False, headers=headers
+        ).content
+        # logging.debug(file_content)
+        df = pd.read_excel(
+            io.BytesIO(file_content), usecols="A:D", skiprows=3, sheet_name="PBI"
+        )
+        columns = df.columns
+        df["Expected Year"] = df["Fecha"]
+        condition = ~df["Expected Year"].str.contains("Expectativas", na=False)
+        df.loc[condition, "Expected Year"] = np.nan
+        df["Expected Year"] = df["Expected Year"].fillna(method="ffill")
+        df["Expected Year"] = df["Expected Year"].str.replace(
+            "Expectativas anuales de ", ""
+        )
+        df = df.loc[
+            (df["Expected Year"] == f"{year}")
+            | (df["Expected Year"] == f"{year + 1}"),
+            columns,
+        ]
+        logging.debug(df)
+        logging.info("Got Expected PBI")
+    except Exception as e:
+        logging.error(f"Error executing function get_expected_pbi: {e}")
+        df = pd.DataFrame()
 
     return df
 
@@ -813,7 +842,7 @@ def read_parameters(file_path: str, sheet_name: str):
                 logging.error(f"Error executing function {function}: {e}")
             try:
                 with pd.ExcelWriter(
-                    "output.xlsx", mode="a", if_sheet_exists="replace"
+                    "output.xlsx", mode="a", engine='openpyxl', if_sheet_exists="replace"
                 ) as writer:
                     df.to_excel(writer, sheet_name=sheet_name)
             except Exception as e:
